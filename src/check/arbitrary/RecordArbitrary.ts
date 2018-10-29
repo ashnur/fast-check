@@ -9,6 +9,9 @@ export interface RecordConstraints {
 
   /** @depreciated Prefer withDeletedKeys */
   with_deleted_keys?: boolean;
+
+  required?: Array<string>,
+  frequencies?: {[propname: string]: number}
 }
 
 interface DeletedKeys {
@@ -19,7 +22,12 @@ interface DeletedKeysDepreciated {
   with_deleted_keys: true;
 }
 
-type ConstrainedArbitrary<T, Constraints> = Constraints extends DeletedKeys | DeletedKeysDepreciated
+interface DeleteConditions {
+  required: Array<number>,
+  frequencies: {[propname: string]: number}
+}
+
+type ConstrainedArbitrary<T, Constraints> = Constraints extends DeletedKeys | DeletedKeysDepreciated | DeleteConditions
   ? Arbitrary<Partial<T>>
   : Arbitrary<T>;
 
@@ -69,8 +77,17 @@ function record<T>(recordModel: { [K in keyof T]: Arbitrary<T[K]> }, constraints
   const updatedRecordModel: {
     [key: string]: Arbitrary<{ value: T } | null>;
   } = {};
-  for (const k of Object.keys(recordModel))
-    updatedRecordModel[k] = option((recordModel as { [key: string]: Arbitrary<any> })[k].map(v => ({ value: v })));
+
+  for (const k of Object.keys(recordModel)) {
+    if ( constraints.required && constraints.required.includes(k)  ) {
+      updatedRecordModel[k] = option((recordModel as { [key: string]: Arbitrary<any> })[k].map(v => ({ value: v })));
+    } else if ( constraints.frequencies && constraints.frequencies.hasOwnProperty(k)  ) {
+      updatedRecordModel[k] = option((recordModel as { [key: string]: Arbitrary<any> })[k].map(v => ({ value: v })), constraints.frequencies[k]);
+    } else {
+      updatedRecordModel[k] = option((recordModel as { [key: string]: Arbitrary<any> })[k].map(v => ({ value: v })), 1);
+    }
+  }
+
   return rawRecord(updatedRecordModel).map(obj => {
     const nobj: { [key: string]: T } = {};
     for (const k of Object.keys(obj)) {
