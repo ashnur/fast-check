@@ -1,3 +1,6 @@
+import { VerbosityLevel } from '../configuration/VerbosityLevel';
+import { ExecutionStatus } from './ExecutionStatus';
+import { ExecutionTree } from './ExecutionTree';
 import { RunDetails } from './RunDetails';
 
 /**
@@ -8,32 +11,49 @@ import { RunDetails } from './RunDetails';
  * It receives notification from the runner in case of failures
  */
 export class RunExecution<Ts> {
+  readonly rootExecutionTrees: ExecutionTree<Ts>[];
+  currentLevelExecutionTrees: ExecutionTree<Ts>[];
   pathToFailure?: string;
   value?: Ts;
   failure: string;
-  allFailures: Ts[];
   numSkips: number;
   numSuccesses: number;
 
-  constructor(readonly storeFailures: boolean) {
-    this.allFailures = [];
+  constructor(readonly verbosity: VerbosityLevel) {
+    this.rootExecutionTrees = [];
+    this.currentLevelExecutionTrees = this.rootExecutionTrees;
     this.numSkips = 0;
     this.numSuccesses = 0;
   }
 
+  private appendExecutionTree(status: ExecutionStatus, value: Ts) {
+    const currentTree: ExecutionTree<Ts> = { status, value, children: [] };
+    this.currentLevelExecutionTrees.push(currentTree);
+    return currentTree;
+  }
+
   fail(value: Ts, id: number, message: string) {
-    if (this.storeFailures) this.allFailures.push(value);
+    if (this.verbosity >= VerbosityLevel.Verbose) {
+      const currentTree = this.appendExecutionTree(ExecutionStatus.Failure, value);
+      this.currentLevelExecutionTrees = currentTree.children;
+    }
     if (this.pathToFailure == null) this.pathToFailure = `${id}`;
     else this.pathToFailure += `:${id}`;
     this.value = value;
     this.failure = message;
   }
-  skip() {
+  skip(value: Ts) {
+    if (this.verbosity >= VerbosityLevel.VeryVerbose) {
+      this.appendExecutionTree(ExecutionStatus.Skipped, value);
+    }
     if (this.pathToFailure == null) {
       ++this.numSkips;
     }
   }
-  success() {
+  success(value: Ts) {
+    if (this.verbosity >= VerbosityLevel.VeryVerbose) {
+      this.appendExecutionTree(ExecutionStatus.Success, value);
+    }
     if (this.pathToFailure == null) {
       ++this.numSuccesses;
     }
@@ -42,6 +62,20 @@ export class RunExecution<Ts> {
   private isSuccess = (): boolean => this.pathToFailure == null;
   private firstFailure = (): number => (this.pathToFailure ? +this.pathToFailure.split(':')[0] : -1);
   private numShrinks = (): number => (this.pathToFailure ? this.pathToFailure.split(':').length - 1 : 0);
+
+  private extractFailures() {
+    if (this.isSuccess()) {
+      return [];
+    }
+    const failures: Ts[] = [];
+    let cursor = this.rootExecutionTrees;
+    while (cursor.length > 0 && cursor[cursor.length - 1].status === ExecutionStatus.Failure) {
+      const failureTree = cursor[cursor.length - 1];
+      failures.push(failureTree.value);
+      cursor = failureTree.children;
+    }
+    return failures;
+  }
 
   private static mergePaths = (offsetPath: string, path: string) => {
     if (offsetPath.length === 0) return path;
@@ -63,7 +97,9 @@ export class RunExecution<Ts> {
         counterexample: this.value!,
         counterexamplePath: RunExecution.mergePaths(basePath, this.pathToFailure!),
         error: this.failure,
-        failures: this.allFailures
+        failures: this.extractFailures(),
+        executionSummary: this.rootExecutionTrees,
+        verbose: this.verbosity
       };
     }
     if (this.numSkips > maxSkips) {
@@ -77,7 +113,9 @@ export class RunExecution<Ts> {
         counterexample: null,
         counterexamplePath: null,
         error: null,
-        failures: []
+        failures: [],
+        executionSummary: this.rootExecutionTrees,
+        verbose: this.verbosity
       };
     }
     return {
@@ -89,7 +127,9 @@ export class RunExecution<Ts> {
       counterexample: null,
       counterexamplePath: null,
       error: null,
-      failures: []
+      failures: [],
+      executionSummary: this.rootExecutionTrees,
+      verbose: this.verbosity
     };
   }
 }

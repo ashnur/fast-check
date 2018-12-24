@@ -7,9 +7,11 @@ import { assert, check } from './check/runner/Runner';
 import { sample, statistics } from './check/runner/Sampler';
 
 import { array } from './check/arbitrary/ArrayArbitrary';
+import { bigInt, bigIntN, bigUint, bigUintN } from './check/arbitrary/BigIntArbitrary';
 import { boolean } from './check/arbitrary/BooleanArbitrary';
 import { ascii, base64, char, char16bits, fullUnicode, hexa, unicode } from './check/arbitrary/CharacterArbitrary';
-import { constant, constantFrom } from './check/arbitrary/ConstantArbitrary';
+import { clonedConstant, constant, constantFrom } from './check/arbitrary/ConstantArbitrary';
+import { context, Context } from './check/arbitrary/ContextArbitrary';
 import { Arbitrary } from './check/arbitrary/definition/Arbitrary';
 import { Shrinkable } from './check/arbitrary/definition/Shrinkable';
 import { dictionary } from './check/arbitrary/DictionaryArbitrary';
@@ -31,6 +33,7 @@ import { oneof } from './check/arbitrary/OneOfArbitrary';
 import { option } from './check/arbitrary/OptionArbitrary';
 import { record, RecordConstraints } from './check/arbitrary/RecordArbitrary';
 import { set } from './check/arbitrary/SetArbitrary';
+import { infiniteStream } from './check/arbitrary/StreamArbitrary';
 import {
   asciiString,
   base64String,
@@ -52,6 +55,10 @@ import { asyncModelRun, modelRun } from './check/model/ModelRunner';
 
 import { Random } from './random/generator/Random';
 
+import { VerbosityLevel } from './check/runner/configuration/VerbosityLevel';
+import { ExecutionStatus } from './check/runner/reporter/ExecutionStatus';
+import { ExecutionTree } from './check/runner/reporter/ExecutionTree';
+import { cloneMethod } from './check/symbols';
 import { Stream, stream } from './stream/Stream';
 
 // boolean
@@ -79,6 +86,10 @@ export {
   double,
   integer,
   nat,
+  bigIntN,
+  bigUintN,
+  bigInt,
+  bigUint,
   char,
   ascii,
   char16bits,
@@ -97,12 +108,14 @@ export {
   lorem,
   constant,
   constantFrom,
+  clonedConstant,
   option,
   oneof,
   frequency,
   shuffledSubarray,
   subarray,
   array,
+  infiniteStream,
   set,
   tuple,
   genericTuple,
@@ -117,6 +130,7 @@ export {
   compareBooleanFunc,
   compareFunc,
   func,
+  context,
   // model-based
   AsyncCommand,
   Command,
@@ -127,12 +141,17 @@ export {
   // extend the framework
   Arbitrary,
   Shrinkable,
+  cloneMethod,
   // interfaces
+  Context,
+  ExecutionStatus,
+  ExecutionTree,
   ObjectConstraints,
   Parameters,
   RecordConstraints,
   RunDetails,
   Random,
   Stream,
-  stream
+  stream,
+  VerbosityLevel
 };

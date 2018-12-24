@@ -1,4 +1,3 @@
-import * as assert from 'assert';
 import * as fc from '../../src/fast-check';
 
 // Code under tests
@@ -39,7 +38,7 @@ class Space {
   }
   toString() {
     return `Space(grid{x:${this.dim_x},y:${this.dim_y}},solution{x:${this.solution_x},y:${this.solution_y}},initial{x:${
-      this.initial_y
+      this.initial_x
     },y:${this.initial_y}})`;
   }
 }
@@ -175,15 +174,13 @@ describe(`Shadows (seed: ${seed})`, () => {
       );
     } catch (err) {
       failed = true;
-      const msg = err.message as string;
-      assert.ok(msg.indexOf(`seed: ${seed}, path:`) !== -1, `Message contains the seed, got: ${err}`);
-      assert.ok(
-        /\[Space\(grid\{x:\d+,y:\d+\},solution\{x:\d+,y:\d+\},initial\{x:\d+,y:\d+\}\),\d+\]/.exec(msg) !== null,
-        `Message contains the failing entry, got: ${err}`
+      expect(err.message).toContain(`seed: ${seed | 0}, path:`);
+      expect(err.message).toMatch(
+        /\[Space\(grid\{x:\d+,y:\d+\},solution\{x:\d+,y:\d+\},initial\{x:\d+,y:\d+\}\),\d+\]/
       );
-      assert.ok(/failed after \d+ test/.exec(msg) !== null, `Message contains the number of tests, got: ${err}`);
+      expect(err.message).toMatch(/failed after \d+ test/);
     }
-    assert.ok(failed, 'Should have failed');
+    expect(failed).toBe(true);
   });
   it('Should not detect any issue', () => {
     fc.assert(
