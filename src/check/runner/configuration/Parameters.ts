@@ -1,5 +1,6 @@
 import { RandomGenerator } from 'pure-rand';
 import { RandomType } from './RandomType';
+import { VerbosityLevel } from './VerbosityLevel';
 
 /**
  * Customization of the parameters used to run the properties
@@ -8,7 +9,10 @@ export interface Parameters<T = void> {
   /**
    * Initial seed of the generator: `Date.now()` by default
    *
-   * It can be forced to replay a failed run
+   * It can be forced to replay a failed run.
+   *
+   * In theory, seeds are supposed to be 32 bits integers.
+   * In case of double value, the seed will be rescaled into a valid 32 bits integer (eg.: values between 0 and 1 will be evenly spread into the range of possible seeds).
    */
   seed?: number;
   /**
@@ -52,14 +56,14 @@ export interface Parameters<T = void> {
    */
   unbiased?: boolean;
   /**
-   * Enable verbose mode: false by default
+   * Enable verbose mode: {@link VerbosityLevel.None} by default
    *
-   * When enabling verbose mode
-   * you will be provided the list of all failing entries encountered whenever a property fails
+   * Using `verbose: true` is equivalent to `verbose: VerbosityLevel.Verbose`
    *
-   * It can prove very useful to detect pattern in the inputs causing the problem to occur
+   * It can prove very useful to troubleshoot issues.
+   * See {@link VerbosityLevel} for more details on each level.
    */
-  verbose?: boolean;
+  verbose?: boolean | VerbosityLevel;
   /**
    * Custom values added at the beginning of generated ones
    *

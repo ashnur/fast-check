@@ -1,4 +1,3 @@
-import * as assert from 'assert';
 import * as prand from 'pure-rand';
 import * as fc from '../../../../../lib/fast-check';
 
@@ -44,7 +43,8 @@ const testSameSeedSameShrinks = function<U, T>(
             s2 = s2.shrink().getNthOrLast(id);
             id = (id + 1) % shrinkPath.length;
           }
-          assert.ok(s1 === null && s2 === null);
+          expect(s1).toBe(null);
+          expect(s2).toBe(null);
         }
       )
     ));
@@ -69,10 +69,7 @@ const testShrinkPathStrictlyDecreasing = function<U, T>(
           while (shrinkable !== null) {
             shrinkable = shrinkable.shrink().getNthOrLast(id);
             if (shrinkable !== null) {
-              assert.ok(
-                isStrictlySmallerValue(shrinkable.value, prevValue),
-                `Expect ${JSON.stringify(shrinkable.value)} to be strictly inferior to ${JSON.stringify(prevValue)}`
-              );
+              expect(isStrictlySmallerValue(shrinkable.value, prevValue)).toBe(true);
               prevValue = shrinkable.value;
             }
             id = (id + 1) % shrinkPath.length;
@@ -92,12 +89,7 @@ const testAlwaysGenerateCorrectValues = function<U, T>(
       fc.property(argsForArbGenerator, fc.integer().noShrink(), (params, seed) => {
         const arb = arbGenerator(params);
         const shrinkable = arb.generate(new Random(prand.xorshift128plus(seed)));
-        assert.ok(
-          isValidValue(shrinkable.value, params),
-          `Expect ${JSON.stringify(shrinkable.value)} to be a correct value (built with parameters: ${JSON.stringify(
-            params
-          )})`
-        );
+        expect(isValidValue(shrinkable.value, params)).toBe(true);
       })
     ));
 };
@@ -118,12 +110,7 @@ const testAlwaysShrinkToCorrectValues = function<U, T>(
           let shrinkable: Shrinkable<T> | null = arb.generate(new Random(prand.xorshift128plus(seed)));
           let id = 0;
           while (shrinkable !== null) {
-            assert.ok(
-              isValidValue(shrinkable.value, params),
-              `Expect ${JSON.stringify(
-                shrinkable.value
-              )} to be a correct value (built with parameters: ${JSON.stringify(params)})`
-            );
+            expect(isValidValue(shrinkable.value, params)).toBe(true);
             shrinkable = shrinkable.shrink().getNthOrLast(id);
             id = (id + 1) % shrinkPath.length;
           }
@@ -152,8 +139,8 @@ export const isValidArbitrary = function<U, T>(
   };
 
   const assertEquality = (v1: T, v2: T) => {
-    if (settings.isEqual) assert.ok(settings.isEqual(v1, v2));
-    else assert.deepStrictEqual(v1, v2);
+    if (settings.isEqual) expect(settings.isEqual(v1, v2)).toBe(true);
+    else expect(v1).toStrictEqual(v2);
   };
   testSameSeedSameValues(biasedSeedGenerator, biasedArbitraryBuilder, assertEquality);
   testSameSeedSameShrinks(biasedSeedGenerator, biasedArbitraryBuilder, assertEquality);
@@ -164,5 +151,5 @@ export const isValidArbitrary = function<U, T>(
   testAlwaysShrinkToCorrectValues(biasedSeedGenerator, biasedArbitraryBuilder, biasedIsValidValue);
 };
 
-export const minMax = (arb: fc.Arbitrary<number>) =>
-  fc.tuple(arb, arb).map(v => ({ min: Math.min(v[0], v[1]), max: Math.max(v[0], v[1]) }));
+export const minMax = <NType extends number | bigint>(arb: fc.Arbitrary<NType>) =>
+  fc.tuple(arb, arb).map(v => ({ min: v[0] < v[1] ? v[0] : v[1], max: v[0] < v[1] ? v[1] : v[0] }));

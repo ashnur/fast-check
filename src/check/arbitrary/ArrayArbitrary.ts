@@ -1,5 +1,6 @@
 import { Random } from '../../random/generator/Random';
 import { Stream } from '../../stream/Stream';
+import { cloneMethod } from '../symbols';
 import { Arbitrary } from './definition/Arbitrary';
 import { ArbitraryWithShrink } from './definition/ArbitraryWithShrink';
 import { biasWrapper } from './definition/BiasedArbitraryWrapper';
@@ -18,11 +19,30 @@ class ArrayArbitrary<T> extends Arbitrary<T[]> {
     super();
     this.lengthArb = integer(minLength, maxLength);
   }
+  private static makeItCloneable<T>(vs: T[], shrinkables: Shrinkable<T>[]) {
+    (vs as any)[cloneMethod] = () => {
+      const cloned = [];
+      for (let idx = 0; idx !== shrinkables.length; ++idx) {
+        cloned.push(shrinkables[idx].value); // push potentially cloned values
+      }
+      this.makeItCloneable(cloned, shrinkables);
+      return cloned;
+    };
+    return vs;
+  }
   private wrapper(itemsRaw: Shrinkable<T>[], shrunkOnce: boolean): Shrinkable<T[]> {
     const items = this.preFilter(itemsRaw);
-    return new Shrinkable(items.map(s => s.value), () =>
-      this.shrinkImpl(items, shrunkOnce).map(v => this.wrapper(v, true))
-    );
+    let cloneable = false;
+    const vs = [];
+    for (let idx = 0; idx !== items.length; ++idx) {
+      const s = items[idx];
+      cloneable = cloneable || s.hasToBeCloned;
+      vs.push(s.value);
+    }
+    if (cloneable) {
+      ArrayArbitrary.makeItCloneable(vs, items);
+    }
+    return new Shrinkable(vs, () => this.shrinkImpl(items, shrunkOnce).map(v => this.wrapper(v, true)));
   }
   generate(mrng: Random): Shrinkable<T[]> {
     const size = this.lengthArb.generate(mrng);

@@ -1,5 +1,6 @@
 import prand, { RandomGenerator } from 'pure-rand';
 import { Parameters } from './Parameters';
+import { VerbosityLevel } from './VerbosityLevel';
 
 /**
  * @hidden
@@ -17,10 +18,21 @@ export class QualifiedParameters<T> {
   path: string;
   logger: (v: string) => void;
   unbiased: boolean;
-  verbose: boolean;
+  verbose: VerbosityLevel;
   examples: T[];
 
-  private static readSeed = <T>(p?: Parameters<T>): number => (p != null && p.seed != null ? p.seed : Date.now());
+  private static readSeed = <T>(p?: Parameters<T>): number => {
+    // No seed specified
+    if (p == null || p.seed == null) return Date.now() ^ (Math.random() * 0x100000000);
+
+    // Seed is a 32 bits signed integer
+    const seed32 = p.seed | 0;
+    if (p.seed === seed32) return seed32;
+
+    // Seed is either a double or an integer outside the authorized 32 bits
+    const gap = p.seed - seed32;
+    return seed32 ^ (gap * 0x100000000);
+  };
   private static readRandomType = <T>(p?: Parameters<T>): ((seed: number) => RandomGenerator) => {
     if (p == null || p.randomType == null) return prand.xorshift128plus;
     if (typeof p.randomType === 'string') {
@@ -52,7 +64,19 @@ export class QualifiedParameters<T> {
     p != null && p.timeout != null ? p.timeout : null;
   private static readPath = <T>(p?: Parameters<T>): string => (p != null && p.path != null ? p.path : '');
   private static readUnbiased = <T>(p?: Parameters<T>): boolean => p != null && p.unbiased === true;
-  private static readVerbose = <T>(p?: Parameters<T>): boolean => p != null && p.verbose === true;
+  private static readVerbose = <T>(p?: Parameters<T>): VerbosityLevel => {
+    if (p == null || p.verbose == null) return VerbosityLevel.None;
+    if (typeof p.verbose === 'boolean') {
+      return p.verbose === true ? VerbosityLevel.Verbose : VerbosityLevel.None;
+    }
+    if (p.verbose <= VerbosityLevel.None) {
+      return VerbosityLevel.None;
+    }
+    if (p.verbose >= VerbosityLevel.VeryVerbose) {
+      return VerbosityLevel.VeryVerbose;
+    }
+    return p.verbose | 0;
+  };
   private static readLogger = <T>(p?: Parameters<T>): ((v: string) => void) => {
     if (p != null && p.logger != null) return p.logger;
     return (v: string) => {
