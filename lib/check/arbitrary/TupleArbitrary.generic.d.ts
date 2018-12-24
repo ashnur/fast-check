@@ -5,6 +5,7 @@ import { Shrinkable } from './definition/Shrinkable';
 declare class GenericTupleArbitrary<Ts> extends Arbitrary<Ts[]> {
     readonly arbs: Arbitrary<Ts>[];
     constructor(arbs: Arbitrary<Ts>[]);
+    private static makeItCloneable;
     private static wrapper;
     generate(mrng: Random): Shrinkable<Ts[]>;
     private static shrinkImpl;

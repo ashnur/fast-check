@@ -10,6 +10,7 @@ declare class ArrayArbitrary<T> extends Arbitrary<T[]> {
     readonly preFilter: (tab: Shrinkable<T>[]) => Shrinkable<T>[];
     readonly lengthArb: ArbitraryWithShrink<number>;
     constructor(arb: Arbitrary<T>, minLength: number, maxLength: number, preFilter?: (tab: Shrinkable<T>[]) => Shrinkable<T>[]);
+    private static makeItCloneable;
     private wrapper;
     generate(mrng: Random): Shrinkable<T[]>;
     private shrinkImpl;

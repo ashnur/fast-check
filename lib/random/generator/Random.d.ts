@@ -35,6 +35,12 @@ export declare class Random {
      */
     nextInt(min: number, max: number): number;
     /**
+     * Generate a random bigint between min (included) and max (included)
+     * @param min Minimal bigint value
+     * @param max Maximal bigint value
+     */
+    nextBigInt(min: bigint, max: bigint): bigint;
+    /**
      * Generate a random floating point number between 0.0 (included) and 1.0 (excluded)
      */
     nextDouble(): number;

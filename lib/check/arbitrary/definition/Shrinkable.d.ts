@@ -4,13 +4,33 @@ import { Stream } from '../../../stream/Stream';
  * and can shrink it to smaller `T` values
  */
 export declare class Shrinkable<T> {
-    readonly value: T;
+    readonly value_: T;
     readonly shrink: () => Stream<Shrinkable<T>>;
+    /**
+     * State storing the result of hasCloneMethod
+     * If <true> the value will be cloned each time it gets accessed
+     */
+    readonly hasToBeCloned: boolean;
+    /**
+     * Flag indicating whether or not the this.value has already been called once
+     * If so, the underlying will be cloned
+     * Only set when hasToBeCloned = true
+     */
+    private readOnce;
+    /**
+     * Safe value of the shrinkable
+     * Depending on {@link hasToBeCloned} it will either be {@link value_} or a clone of it
+     */
+    readonly value: T;
     /**
      * @param value Internal value of the shrinkable
      * @param shrink Function producing Stream of shrinks associated to value
      */
-    constructor(value: T, shrink?: () => Stream<Shrinkable<T>>);
+    constructor(value_: T, shrink?: () => Stream<Shrinkable<T>>);
+    /** @hidden */
+    private getValue;
+    /** @hidden */
+    private applyMapper;
     /**
      * Create another shrinkable by mapping all values using the provided `mapper`
      * Both the original value and the shrunk ones are impacted

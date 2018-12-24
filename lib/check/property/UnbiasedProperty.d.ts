@@ -5,6 +5,6 @@ export declare class UnbiasedProperty<Ts> implements IProperty<Ts> {
     readonly property: IProperty<Ts>;
     constructor(property: IProperty<Ts>);
     isAsync: () => boolean;
-    generate: (mrng: Random, runId?: number | undefined) => import("../arbitrary/definition/Shrinkable").Shrinkable<Ts>;
+    generate: (mrng: Random, runId?: number | undefined) => import("../../fast-check-default").Shrinkable<Ts>;
     run: (v: Ts) => string | import("../precondition/PreconditionFailure").PreconditionFailure | Promise<string | import("../precondition/PreconditionFailure").PreconditionFailure | null> | null;
 }

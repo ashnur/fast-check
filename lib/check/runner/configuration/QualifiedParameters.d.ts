@@ -1,5 +1,6 @@
 import { RandomGenerator } from 'pure-rand';
 import { Parameters } from './Parameters';
+import { VerbosityLevel } from './VerbosityLevel';
 /**
  * @hidden
  *
@@ -16,7 +17,7 @@ export declare class QualifiedParameters<T> {
     path: string;
     logger: (v: string) => void;
     unbiased: boolean;
-    verbose: boolean;
+    verbose: VerbosityLevel;
     examples: T[];
     private static readSeed;
     private static readRandomType;
