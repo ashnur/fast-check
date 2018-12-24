@@ -1,0 +1,1 @@
+{"version":3,"file":"symbols.js","sourceRoot":"","sources":["../../src/check/symbols.ts"],"names":[],"mappings":";;AAAA;;;;;;;;;GASG;AACU,QAAA,WAAW,GAAG,MAAM,CAAC,KAAG,CAAA,CAAC,wBAAwB,CAAC,CAAC;AAOhE,cAAc;AACD,QAAA,cAAc,GAAG,UAAI,QAAgC;IAChE,wCAAwC;IACxC,yEAAyE;IACzE,gBAAgB;IAChB,qCAAqC;IACrC,OAAO,QAAQ,YAAY,MAAM,IAAI,OAAQ,QAAgB,CAAC,mBAAW,CAAC,KAAK,UAAU,CAAC;AAC5F,CAAC,CAAC"}
