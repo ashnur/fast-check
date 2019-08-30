@@ -1,9 +1,8 @@
-import * as assert from 'assert';
 import * as fc from '../../../../../lib/fast-check';
 
+import { constant } from '../../../../../src/check/arbitrary/ConstantArbitrary';
 import { Arbitrary } from '../../../../../src/check/arbitrary/definition/Arbitrary';
 import { Shrinkable } from '../../../../../src/check/arbitrary/definition/Shrinkable';
-import { constant } from '../../../../../src/check/arbitrary/ConstantArbitrary';
 import { nat } from '../../../../../src/check/arbitrary/IntegerArbitrary';
 import { tuple } from '../../../../../src/check/arbitrary/TupleArbitrary';
 import { Random } from '../../../../../src/random/generator/Random';
@@ -11,7 +10,6 @@ import { stream } from '../../../../../src/stream/Stream';
 
 import * as genericHelper from '../generic/GenericArbitraryHelper';
 
-import * as stubArb from '../../../stubs/arbitraries';
 import * as stubRng from '../../../stubs/generators';
 
 class ForwardArbitrary extends Arbitrary<number> {
@@ -26,11 +24,11 @@ class ForwardArbitrary extends Arbitrary<number> {
   }
   withBias(freq: number) {
     const arb = this;
-    return new class extends Arbitrary<number> {
+    return new (class extends Arbitrary<number> {
       generate(mrng: Random): Shrinkable<number> {
         return mrng.nextInt(1, freq) === 1 ? new Shrinkable(42) : arb.generate(mrng);
       }
-    }();
+    })();
   }
 }
 
@@ -48,11 +46,11 @@ class FakeTwoValuesBiasArbitrary extends Arbitrary<number> {
     return new Shrinkable(44);
   }
   withBias(freq: number) {
-    return new class extends Arbitrary<number> {
+    return new (class extends Arbitrary<number> {
       generate(mrng: Random): Shrinkable<number> {
         return mrng.nextInt(1, 2) === 1 ? new Shrinkable(42) : new Shrinkable(43);
       }
-    }();
+    })();
   }
 }
 
@@ -63,7 +61,7 @@ describe('Arbitrary', () => {
         fc.property(fc.integer(), (seed: number) => {
           const mrng = stubRng.mutable.fastincrease(seed);
           const g = new ForwardArbitrary().filter(v => v % 3 === 0).generate(mrng).value;
-          assert.ok(g % 3 === 0);
+          expect(g % 3 === 0).toBe(true);
           return true;
         })
       ));
@@ -72,7 +70,7 @@ describe('Arbitrary', () => {
         fc.property(fc.integer(), (seed: number) => {
           const mrng = stubRng.mutable.fastincrease(seed);
           const shrinkable = new ForwardArbitrary().filter(v => v % 3 === 0).generate(mrng);
-          assert.ok(shrinkable.shrink().every(s => s.value % 3 === 0));
+          expect(shrinkable.shrink().every(s => s.value % 3 === 0)).toBe(true);
           return true;
         })
       ));
@@ -81,12 +79,12 @@ describe('Arbitrary', () => {
         fc.property(fc.integer(), (seed: number) => {
           const mrng = stubRng.mutable.fastincrease(seed);
           const shrinkable = new ForwardArbitrary().filter(v => v % 3 === 0).generate(mrng);
-          assert.ok(
+          expect(
             shrinkable
               .shrink()
               .flatMap(s => s.shrink())
               .every(s => s.value % 3 === 0)
-          );
+          ).toBe(true);
           return true;
         })
       ));
@@ -97,7 +95,7 @@ describe('Arbitrary', () => {
           const arb = new FakeTwoValuesBiasArbitrary().filter(v => v !== 42);
           const biasedArb = arb.withBias(2); // this arbitrary is always 100% biased (see its code)
           const g = biasedArb.generate(mrng).value;
-          assert.ok(g === 43);
+          expect(g).toEqual(43);
           return true;
         })
       ));
@@ -108,7 +106,7 @@ describe('Arbitrary', () => {
           const arb = new ForwardArbitrary().filter(v => v !== 42);
           const biasedArb = arb.withBias(2);
           const g = biasedArb.generate(mrng).value;
-          assert.notEqual(g, 42);
+          expect(g).not.toEqual(42);
           return true;
         })
       ));
@@ -120,7 +118,7 @@ describe('Arbitrary', () => {
           const mrng1 = stubRng.mutable.fastincrease(seed);
           const mrng2 = stubRng.mutable.fastincrease(seed);
           const g = new ForwardArbitrary().map(v => `value = ${v}`).generate(mrng1).value;
-          assert.equal(g, `value = ${new ForwardArbitrary().generate(mrng2).value}`);
+          expect(g).toEqual(`value = ${new ForwardArbitrary().generate(mrng2).value}`);
           return true;
         })
       ));
@@ -129,7 +127,7 @@ describe('Arbitrary', () => {
         fc.property(fc.integer(), (seed: number) => {
           const mrng = stubRng.mutable.fastincrease(seed);
           const shrinkable = new ForwardArbitrary().map(v => `value = ${v}`).generate(mrng);
-          assert.ok(shrinkable.shrink().every(s => s.value.startsWith('value = ')));
+          expect(shrinkable.shrink().every(s => s.value.startsWith('value = '))).toBe(true);
           return true;
         })
       ));
@@ -138,12 +136,12 @@ describe('Arbitrary', () => {
         fc.property(fc.integer(), (seed: number) => {
           const mrng = stubRng.mutable.fastincrease(seed);
           const shrinkable = new ForwardArbitrary().map(v => `value = ${v}`).generate(mrng);
-          assert.ok(
+          expect(
             shrinkable
               .shrink()
               .flatMap(s => s.shrink())
               .every(s => s.value.startsWith('value = '))
-          );
+          ).toBe(true);
           return true;
         })
       ));
@@ -154,7 +152,7 @@ describe('Arbitrary', () => {
           const arb = new ForwardArbitrary().map(v => `value = ${v}`);
           const biasedArb = arb.withBias(1); // 100% of bias - not recommended outside of tests
           const g = biasedArb.generate(mrng).value;
-          assert.equal(g, `value = 42`);
+          expect(g).toEqual(`value = 42`);
           return true;
         })
       ));
@@ -169,7 +167,7 @@ describe('Arbitrary', () => {
           const arb = new ForwardArbitrary().chain(fmapper);
           const biasedArb = arb.withBias(1); // 100% of bias - not recommended outside of tests
           const g = biasedArb.generate(mrng).value;
-          assert.equal(g, 42);
+          expect(g).toEqual(42);
           return true;
         })
       ));
@@ -181,7 +179,7 @@ describe('Arbitrary', () => {
           const arb = constant(0).chain(fmapper);
           const biasedArb = arb.withBias(1); // 100% of bias - not recommended outside of tests
           const g = biasedArb.generate(mrng).value;
-          assert.equal(g, 42);
+          expect(g).toEqual(42);
           return true;
         })
       ));
@@ -199,7 +197,7 @@ describe('Arbitrary', () => {
         fc.property(fc.integer(), (seed: number) => {
           const mrng = stubRng.mutable.fastincrease(seed);
           const shrinkable = new ForwardArbitrary().noShrink().generate(mrng);
-          assert.deepStrictEqual([...shrinkable.shrink()], []);
+          expect([...shrinkable.shrink()]).toEqual([]);
           return true;
         })
       ));
@@ -210,7 +208,7 @@ describe('Arbitrary', () => {
           const arb = new FakeNoBiasArbitrary().noShrink();
           const biasedArb = arb.withBias(1); // 100% of bias - not recommended outside of tests
           const shrinkable = biasedArb.generate(mrng);
-          assert.deepStrictEqual([...shrinkable.shrink()], []);
+          expect([...shrinkable.shrink()]).toEqual([]);
           return true;
         })
       ));
@@ -221,7 +219,7 @@ describe('Arbitrary', () => {
       const arb = new FakeTwoValuesBiasArbitrary().noBias();
       const biasedArb = arb.withBias(1);
       const g = biasedArb.generate(mrng).value;
-      assert.equal(g, 44);
+      expect(g).toEqual(44);
     });
   });
 });

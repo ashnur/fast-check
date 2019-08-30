@@ -1,34 +1,62 @@
-import * as assert from 'assert';
 import * as fc from '../../../src/fast-check';
-
-type Model = {
-  current: { stepId: number };
-  validSteps: number[];
-};
-type Real = {};
-
-class SuccessAlwaysCommand implements fc.Command<Model, Real> {
-  check = (m: Readonly<Model>) => true;
-  run = (m: Model, r: Real) => {};
-  toString = () => 'success';
-}
-class SuccessCommand implements fc.Command<Model, Real> {
-  check = (m: Readonly<Model>) => m.validSteps.includes(m.current.stepId++);
-  run = (m: Model, r: Real) => {};
-  toString = () => 'success';
-}
-class FailureCommand implements fc.Command<Model, Real> {
-  check = (m: Readonly<Model>) => m.validSteps.includes(m.current.stepId++);
-  run = (m: Model, r: Real) => {
-    throw 'failure';
-  };
-  toString = () => 'failure';
-}
+import { FailureCommand, SuccessCommand } from './StepCommands';
+import {
+  IncreaseCommand,
+  DecreaseCommand,
+  EvenCommand,
+  OddCommand,
+  CheckLessThanCommand,
+  SuccessAlwaysCommand
+} from './CounterCommands';
 
 const seed = Date.now();
 describe(`CommandsArbitrary (seed: ${seed})`, () => {
   describe('commands', () => {
-    it('Should print only the commands corresponding to the failure', () => {
+    it('Should shrink up to the shortest failing commands list', () => {
+      const out = fc.check(
+        fc.property(
+          fc.commands(
+            [
+              fc.nat().map(n => new IncreaseCommand(n)),
+              fc.nat().map(n => new DecreaseCommand(n)),
+              fc.constant(new EvenCommand()),
+              fc.constant(new OddCommand()),
+              fc.nat().map(n => new CheckLessThanCommand(n + 1))
+            ],
+            { disableReplayLog: true, maxCommands: 1000 }
+          ),
+          cmds => {
+            const setup = () => ({
+              model: { count: 0 },
+              real: {}
+            });
+            fc.modelRun(setup, cmds);
+          }
+        ),
+        { seed: seed }
+      );
+      expect(out.failed).toBe(true);
+
+      const cmdsRepr = out.counterexample![0].toString();
+      expect(cmdsRepr).toMatch(/check\[(\d+)\]$/);
+      expect(cmdsRepr).toEqual('inc[1],check[1]');
+    });
+    it('Should result in empty commands if failures happen after the run', () => {
+      const out = fc.check(
+        fc.property(fc.commands([fc.constant(new SuccessAlwaysCommand())]), cmds => {
+          const setup = () => ({
+            model: { count: 0 },
+            real: {}
+          });
+          fc.modelRun(setup, cmds);
+          return false; // fails after the model, no matter the commands
+        }),
+        { seed: seed }
+      );
+      expect(out.failed).toBe(true);
+      expect([...out.counterexample![0]]).toHaveLength(0);
+    });
+    it('Should shrink towards minimal case even with other arbitraries', () => {
       // Why this test?
       //
       // fc.commands is one of the rare Arbitrary relying on an internal state.
@@ -38,13 +66,14 @@ describe(`CommandsArbitrary (seed: ${seed})`, () => {
       // First version was failing on this test with the following output:
       // Expected the only played command to be 'failure', got: -,success,failure for steps 2
       // The output for 'steps 2' should have been '-,-,failure'
-
       const out = fc.check(
         fc.property(
           fc.array(fc.nat(9), 0, 3),
-          fc.commands([fc.constant(new FailureCommand()), fc.constant(new SuccessCommand())]),
+          fc.commands([fc.constant(new FailureCommand()), fc.constant(new SuccessCommand())], {
+            disableReplayLog: true
+          }),
           fc.array(fc.nat(9), 0, 3),
-          (validSteps1: number[], cmds: Iterable<fc.Command<Model, Real>>, validSteps2: number[]) => {
+          (validSteps1, cmds, validSteps2) => {
             const setup = () => ({
               model: { current: { stepId: 0 }, validSteps: [...validSteps1, ...validSteps2] },
               real: {}
@@ -54,32 +83,38 @@ describe(`CommandsArbitrary (seed: ${seed})`, () => {
         ),
         { seed: seed }
       );
-      assert.ok(out.failed, 'Should have failed');
-      const cmdsRepr = out.counterexample![1].toString();
-      const validSteps = [...out.counterexample![0], ...out.counterexample![2]];
-      assert.equal(
-        cmdsRepr,
-        'failure',
-        `Expected the only played command to be 'failure', got: ${cmdsRepr} for steps ${validSteps.sort().join(',')}`
-      );
+      expect(out.failed).toBe(true);
+      expect(out.counterexample![1].toString()).toEqual('failure');
     });
-    it('Should result in empty commands if failures happen after the run', () => {
+    it('Should not start a run with already started commands', () => {
+      // Why this test?
+      // fc.commands relies on cloning not to waste the hasRan status of an execution
+      // between two runs it is supposed to clone the commands before resetting the hasRan flag
+      let unexpectedPartiallyExecuted: string[] = [];
       const out = fc.check(
         fc.property(
-          fc.commands([fc.constant(new SuccessAlwaysCommand())]),
-          (cmds: Iterable<fc.Command<Model, Real>>) => {
+          fc.array(fc.nat(9), 0, 3),
+          fc.commands([fc.constant(new FailureCommand()), fc.constant(new SuccessCommand())], {
+            disableReplayLog: true
+          }),
+          fc.array(fc.nat(9), 0, 3),
+          (validSteps1, cmds, validSteps2) => {
+            if (String(cmds) !== '') {
+              // When no command has been started, String(cmds) === ''
+              // Having String(cmds) !== '' implies that some commands have the hasRan flag ON
+              unexpectedPartiallyExecuted.push(String(cmds));
+            }
             const setup = () => ({
-              model: { current: { stepId: 0 }, validSteps: [] },
+              model: { current: { stepId: 0 }, validSteps: [...validSteps1, ...validSteps2] },
               real: {}
             });
             fc.modelRun(setup, cmds);
-            return false; // fails after the model, no matter the commands
           }
         ),
         { seed: seed }
       );
-      assert.ok(out.failed, 'Should have failed');
-      assert.equal([...out.counterexample![0]].length, 0);
+      expect(out.failed).toBe(true);
+      expect(unexpectedPartiallyExecuted).toEqual([]);
     });
   });
 });

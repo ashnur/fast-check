@@ -18,11 +18,11 @@ function swap<T>(tab: T[], idx1: number, idx2: number): void {
 }
 
 /** @hidden */
-function buildCompareFilter<T>(compare: (a: T, b: T) => boolean): ((tab: Shrinkable<T>[]) => Shrinkable<T>[]) {
+function buildCompareFilter<T>(compare: (a: T, b: T) => boolean): (tab: Shrinkable<T>[]) => Shrinkable<T>[] {
   return (tab: Shrinkable<T>[]): Shrinkable<T>[] => {
     let finalLength = tab.length;
     for (let idx = tab.length - 1; idx !== -1; --idx) {
-      if (subArrayContains(tab, idx, t => compare(t.value, tab[idx].value))) {
+      if (subArrayContains(tab, idx, t => compare(t.value_, tab[idx].value_))) {
         --finalLength;
         swap(tab, idx, finalLength);
       }
@@ -88,10 +88,10 @@ function set<T>(
     compareFn != null
       ? compareFn
       : typeof bLength === 'function'
-        ? (bLength as (a: T, b: T) => boolean)
-        : typeof aLength === 'function'
-          ? (aLength as (a: T, b: T) => boolean)
-          : (a: T, b: T) => a === b;
+      ? (bLength as (a: T, b: T) => boolean)
+      : typeof aLength === 'function'
+      ? (aLength as (a: T, b: T) => boolean)
+      : (a: T, b: T) => a === b;
 
   const arrayArb = new ArrayArbitrary<T>(arb, minLength, maxLength, buildCompareFilter(compare));
   if (minLength === 0) return arrayArb;

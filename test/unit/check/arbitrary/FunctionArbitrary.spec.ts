@@ -1,11 +1,18 @@
 import * as fc from '../../../../lib/fast-check';
 
 import { func, compareFunc, compareBooleanFunc } from '../../../../src/check/arbitrary/FunctionArbitrary';
+import { context } from '../../../../src/check/arbitrary/ContextArbitrary';
 import { integer } from '../../../../src/check/arbitrary/IntegerArbitrary';
+import { hasCloneMethod, cloneMethod } from '../../../../src/check/symbols';
 
 import * as genericHelper from './generic/GenericArbitraryHelper';
 
 import * as stubRng from '../../stubs/generators';
+
+const forceClone = <T>(instance: T) => {
+  if (!hasCloneMethod(instance)) throw new Error('Missing [cloneMethod]');
+  return instance[cloneMethod]();
+};
 
 describe('FunctionArbitrary', () => {
   describe('func', () => {
@@ -31,10 +38,57 @@ describe('FunctionArbitrary', () => {
           return va1 === va2 && vb1 === vb2;
         })
       ));
+    it('Should clone produced values if they implement [fc.cloneMethod]', () => {
+      const mrng = stubRng.mutable.fastincrease(0);
+      const f = func(context()).generate(mrng).value;
+      const ctx1 = f(0);
+      ctx1.log('Logging some stuff');
+      const ctx2 = f(0);
+      expect(ctx1.size()).toEqual(1);
+      expect(ctx2.size()).toEqual(0);
+    });
+    it('Should produce a cloneable function', () => {
+      const mrng = stubRng.mutable.counter(0);
+      const s = func(integer()).generate(mrng);
+      expect(s.hasToBeCloned).toBe(true);
+      expect(hasCloneMethod(s.value_)).toBe(true);
+    });
+    describe('Clone compared to the original function', () => {
+      it('Should produce the same values', () =>
+        fc.assert(
+          fc.property(fc.integer(), fc.array(fc.integer()), (seed, inputs) => {
+            const mrng = stubRng.mutable.counter(seed);
+            const f1 = func(integer()).generate(mrng).value_;
+            const f2 = forceClone(f1);
+            expect(inputs.map(f1)).toEqual(inputs.map(f2));
+          })
+        ));
+      it('Should handle history the same way (toString)', () =>
+        fc.assert(
+          fc.property(fc.integer(), fc.array(fc.integer()), (seed, inputs) => {
+            const mrng = stubRng.mutable.counter(seed);
+            const f1 = func(integer()).generate(mrng).value_;
+            const f2 = forceClone(f1);
+            inputs.forEach(f1);
+            inputs.forEach(f2);
+            expect(String(f1)).toEqual(String(f2));
+          })
+        ));
+      it('Should not share history (toString)', () =>
+        fc.assert(
+          fc.property(fc.integer(), fc.array(fc.integer(), 1, 10), (seed, inputs) => {
+            const mrng = stubRng.mutable.counter(seed);
+            const f1 = func(integer()).generate(mrng).value_;
+            const f2 = forceClone(f1);
+            inputs.forEach(f1);
+            expect(String(f1)).not.toEqual(String(f2));
+          })
+        ));
+    });
     describe('Is valid arbitrary', () => {
       genericHelper.isValidArbitrary(() => func<[number, number], number>(integer()), {
         isEqual: (f1, f2) => f1(0, 42) === f2(0, 42),
-        isValidValue: f => typeof f === 'function' && typeof f(0, 0) === 'number'
+        isValidValue: f => typeof f === 'function' && typeof f(0, 0) === 'number' && hasCloneMethod(f)
       });
     });
   });
@@ -82,10 +136,48 @@ describe('FunctionArbitrary', () => {
           else return ba < 0;
         })
       ));
+    it('Should produce a cloneable compare function', () => {
+      const mrng = stubRng.mutable.counter(0);
+      const s = compareFunc().generate(mrng);
+      expect(s.hasToBeCloned).toBe(true);
+      expect(hasCloneMethod(s.value_)).toBe(true);
+    });
+    describe('Clone compared to the original function', () => {
+      it('Should produce the same values', () =>
+        fc.assert(
+          fc.property(fc.integer(), fc.array(fc.tuple(fc.nat(), fc.nat())), (seed, inputs) => {
+            const mrng = stubRng.mutable.counter(seed);
+            const f1 = compareFunc<number>().generate(mrng).value_;
+            const f2 = forceClone(f1);
+            expect(inputs.map(([a, b]) => f1(a, b))).toEqual(inputs.map(([a, b]) => f2(a, b)));
+          })
+        ));
+      it('Should handle history the same way (toString)', () =>
+        fc.assert(
+          fc.property(fc.integer(), fc.array(fc.tuple(fc.nat(), fc.nat())), (seed, inputs) => {
+            const mrng = stubRng.mutable.counter(seed);
+            const f1 = compareFunc<number>().generate(mrng).value_;
+            const f2 = forceClone(f1);
+            inputs.forEach(([a, b]) => f1(a, b));
+            inputs.forEach(([a, b]) => f2(a, b));
+            expect(String(f1)).toEqual(String(f2));
+          })
+        ));
+      it('Should not share history (toString)', () =>
+        fc.assert(
+          fc.property(fc.integer(), fc.array(fc.tuple(fc.nat(), fc.nat()), 1, 10), (seed, inputs) => {
+            const mrng = stubRng.mutable.counter(seed);
+            const f1 = compareFunc<number>().generate(mrng).value_;
+            const f2 = forceClone(f1);
+            inputs.forEach(([a, b]) => f1(a, b));
+            expect(String(f1)).not.toEqual(String(f2));
+          })
+        ));
+    });
     describe('Is valid arbitrary', () => {
       genericHelper.isValidArbitrary(() => compareFunc(), {
         isEqual: (f1, f2) => f1({ k: 0 }, { k: 42 }) === f2({ k: 0 }, { k: 42 }),
-        isValidValue: f => typeof f === 'function' && typeof f({ k: 0 }, { k: 42 }) === 'number'
+        isValidValue: f => typeof f === 'function' && typeof f({ k: 0 }, { k: 42 }) === 'number' && hasCloneMethod(f)
       });
     });
   });
@@ -130,10 +222,48 @@ describe('FunctionArbitrary', () => {
           return f1(a, b) === f2(a, b) < 0;
         })
       ));
+    it('Should produce a cloneable compare function', () => {
+      const mrng = stubRng.mutable.counter(0);
+      const s = compareBooleanFunc().generate(mrng);
+      expect(s.hasToBeCloned).toBe(true);
+      expect(hasCloneMethod(s.value_)).toBe(true);
+    });
+    describe('Clone compared to the original function', () => {
+      it('Should produce the same values', () =>
+        fc.assert(
+          fc.property(fc.integer(), fc.array(fc.tuple(fc.nat(), fc.nat())), (seed, inputs) => {
+            const mrng = stubRng.mutable.counter(seed);
+            const f1 = compareBooleanFunc<number>().generate(mrng).value_;
+            const f2 = forceClone(f1);
+            expect(inputs.map(([a, b]) => f1(a, b))).toEqual(inputs.map(([a, b]) => f2(a, b)));
+          })
+        ));
+      it('Should handle history the same way (toString)', () =>
+        fc.assert(
+          fc.property(fc.integer(), fc.array(fc.tuple(fc.nat(), fc.nat())), (seed, inputs) => {
+            const mrng = stubRng.mutable.counter(seed);
+            const f1 = compareBooleanFunc<number>().generate(mrng).value_;
+            const f2 = forceClone(f1);
+            inputs.forEach(([a, b]) => f1(a, b));
+            inputs.forEach(([a, b]) => f2(a, b));
+            expect(String(f1)).toEqual(String(f2));
+          })
+        ));
+      it('Should not share history (toString)', () =>
+        fc.assert(
+          fc.property(fc.integer(), fc.array(fc.tuple(fc.nat(), fc.nat()), 1, 10), (seed, inputs) => {
+            const mrng = stubRng.mutable.counter(seed);
+            const f1 = compareBooleanFunc<number>().generate(mrng).value_;
+            const f2 = forceClone(f1);
+            inputs.forEach(([a, b]) => f1(a, b));
+            expect(String(f1)).not.toEqual(String(f2));
+          })
+        ));
+    });
     describe('Is valid arbitrary', () => {
       genericHelper.isValidArbitrary(() => compareBooleanFunc(), {
         isEqual: (f1, f2) => f1({ k: 0 }, { k: 42 }) === f2({ k: 0 }, { k: 42 }),
-        isValidValue: f => typeof f === 'function' && typeof f({ k: 0 }, { k: 42 }) === 'boolean'
+        isValidValue: f => typeof f === 'function' && typeof f({ k: 0 }, { k: 42 }) === 'boolean' && hasCloneMethod(f)
       });
     });
   });

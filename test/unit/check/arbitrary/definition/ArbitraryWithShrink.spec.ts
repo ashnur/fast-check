@@ -1,4 +1,3 @@
-import * as assert from 'assert';
 import * as prand from 'pure-rand';
 import * as fc from '../../../../../lib/fast-check';
 
@@ -8,7 +7,7 @@ import { Random } from '../../../../../src/random/generator/Random';
 import { Stream, stream } from '../../../../../src/stream/Stream';
 
 describe('ArbitraryWithShrink', () => {
-  const arbWithShrink = new class extends ArbitraryWithShrink<number> {
+  const arbWithShrink = new (class extends ArbitraryWithShrink<number> {
     generate(mrng: Random): Shrinkable<number> {
       throw new Error('Method not implemented.');
     }
@@ -19,23 +18,22 @@ describe('ArbitraryWithShrink', () => {
       }
       return stream(g());
     }
-  }();
+  })();
   it('Should produce a shrinkable from a value', () => {
-    assert.equal(arbWithShrink.shrinkableFor(5).value, 5);
+    expect(arbWithShrink.shrinkableFor(5).value).toEqual(5);
   });
   it('Should be able to shrink a shrinkable derived from a value', () => {
-    assert.deepEqual(
+    expect(
       Array.from(
         arbWithShrink
           .shrinkableFor(5)
           .shrink()
           .map(s => s.value)
-      ),
-      [5, 6, 7, 8, 9]
-    );
+      )
+    ).toEqual([5, 6, 7, 8, 9]);
   });
   it('Should be able to shrink multiple times a shrinkable derived from a value', () => {
-    assert.deepEqual(
+    expect(
       Array.from(
         arbWithShrink
           .shrinkableFor(5)
@@ -43,12 +41,11 @@ describe('ArbitraryWithShrink', () => {
           .getNthOrLast(2)!
           .shrink()
           .map(s => s.value)
-      ),
-      [0, 7, 8, 9, 10, 11, 12, 13]
-    );
+      )
+    ).toEqual([0, 7, 8, 9, 10, 11, 12, 13]);
   });
 
-  const smallIntWithShrink = new class extends ArbitraryWithShrink<number> {
+  const smallIntWithShrink = new (class extends ArbitraryWithShrink<number> {
     private wrapper(value: number, shrunkOnce: boolean): Shrinkable<number> {
       return new Shrinkable(value, () => this.shrink(value, shrunkOnce).map(v => this.wrapper(v, true)));
     }
@@ -62,7 +59,7 @@ describe('ArbitraryWithShrink', () => {
       }
       return stream(g());
     }
-  }();
+  })();
   it('Should produce the same shrunk values as the generated shrinkable', () => {
     fc.assert(
       fc.property(fc.integer().noShrink(), fc.nat(), (seed, mod) => {
@@ -77,7 +74,7 @@ describe('ArbitraryWithShrink', () => {
         while (true) {
           const generatedTab = Array.from(generatedShrinks);
           const fromValueTab = Array.from(fromValueShrinks);
-          assert.deepEqual(generatedTab.map(s => s.value), fromValueTab.map(s => s.value));
+          expect(generatedTab.map(s => s.value)).toEqual(fromValueTab.map(s => s.value));
           if (generatedTab.length === 0) break;
           generatedShrinks = generatedTab[mod % generatedTab.length].shrink();
           fromValueShrinks = fromValueTab[mod % fromValueTab.length].shrink();

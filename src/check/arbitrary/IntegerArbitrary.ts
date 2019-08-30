@@ -1,9 +1,11 @@
 import { Random } from '../../random/generator/Random';
-import { stream, Stream } from '../../stream/Stream';
+import { Stream } from '../../stream/Stream';
 import { Arbitrary } from './definition/Arbitrary';
 import { ArbitraryWithShrink } from './definition/ArbitraryWithShrink';
 import { biasWrapper } from './definition/BiasedArbitraryWrapper';
 import { Shrinkable } from './definition/Shrinkable';
+import { biasNumeric } from './helpers/BiasNumeric';
+import { shrinkNumber } from './helpers/ShrinkNumeric';
 
 /** @hidden */
 class IntegerArbitrary extends ArbitraryWithShrink<number> {
@@ -24,46 +26,15 @@ class IntegerArbitrary extends ArbitraryWithShrink<number> {
   generate(mrng: Random): Shrinkable<number> {
     return this.wrapper(mrng.nextInt(this.min, this.max), false);
   }
-  private shrink_to(value: number, target: number, shrunkOnce: boolean): Stream<number> {
-    const realGap = value - target;
-    function* shrink_decr(): IterableIterator<number> {
-      const gap = shrunkOnce ? Math.floor(realGap / 2) : realGap;
-      for (let toremove = gap; toremove > 0; toremove = Math.floor(toremove / 2)) {
-        yield value - toremove;
-      }
-    }
-    function* shrink_incr(): IterableIterator<number> {
-      const gap = shrunkOnce ? Math.ceil(realGap / 2) : realGap;
-      for (let toremove = gap; toremove < 0; toremove = Math.ceil(toremove / 2)) {
-        yield value - toremove;
-      }
-    }
-    return realGap > 0 ? stream(shrink_decr()) : stream(shrink_incr());
-  }
   shrink(value: number, shrunkOnce?: boolean): Stream<number> {
-    if (this.min <= 0 && this.max >= 0) {
-      return this.shrink_to(value, 0, shrunkOnce === true);
-    }
-    return value < 0
-      ? this.shrink_to(value, this.max, shrunkOnce === true)
-      : this.shrink_to(value, this.min, shrunkOnce === true);
+    return shrinkNumber(this.min, this.max, value, shrunkOnce === true);
   }
   private pureBiasedArbitrary(): Arbitrary<number> {
     if (this.biasedIntegerArbitrary != null) {
       return this.biasedIntegerArbitrary;
     }
     const log2 = (v: number) => Math.floor(Math.log(v) / Math.log(2));
-    if (this.min === this.max) {
-      this.biasedIntegerArbitrary = new IntegerArbitrary(this.min, this.max);
-    } else if (this.min < 0) {
-      this.biasedIntegerArbitrary =
-        this.max > 0
-          ? new IntegerArbitrary(-log2(-this.min), log2(this.max)) // min and max != 0
-          : new IntegerArbitrary(this.max - log2(this.max - this.min), this.max); // max-min != 0
-    } else {
-      // min >= 0, so max >= 0
-      this.biasedIntegerArbitrary = new IntegerArbitrary(this.min, this.min + log2(this.max - this.min)); // max-min != 0
-    }
+    this.biasedIntegerArbitrary = biasNumeric(this.min, this.max, IntegerArbitrary, log2);
     return this.biasedIntegerArbitrary;
   }
   withBias(freq: number): Arbitrary<number> {
@@ -88,7 +59,16 @@ function integer(max: number): ArbitraryWithShrink<number>;
  */
 function integer(min: number, max: number): ArbitraryWithShrink<number>;
 function integer(a?: number, b?: number): ArbitraryWithShrink<number> {
+  if (a !== undefined && b !== undefined && a > b)
+    throw new Error('fc.integer maximum value should be equal or greater than the minimum one');
   return b === undefined ? new IntegerArbitrary(undefined, a) : new IntegerArbitrary(a, b);
+}
+
+/**
+ * For integers between Number.MIN_SAFE_INTEGER (included) and Number.MAX_SAFE_INTEGER (included)
+ */
+function maxSafeInteger(): ArbitraryWithShrink<number> {
+  return integer(Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER);
 }
 
 /**
@@ -101,7 +81,15 @@ function nat(): ArbitraryWithShrink<number>;
  */
 function nat(max: number): ArbitraryWithShrink<number>;
 function nat(a?: number): ArbitraryWithShrink<number> {
+  if (a !== undefined && a < 0) throw new Error('fc.nat value should be greater than or equal to 0');
   return new IntegerArbitrary(0, a);
 }
 
-export { integer, nat };
+/**
+ * For positive integers between 0 (included) and Number.MAX_SAFE_INTEGER (included)
+ */
+function maxSafeNat(): ArbitraryWithShrink<number> {
+  return nat(Number.MAX_SAFE_INTEGER);
+}
+
+export { integer, nat, maxSafeInteger, maxSafeNat };

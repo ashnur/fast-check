@@ -7,17 +7,26 @@ import { assert, check } from './check/runner/Runner';
 import { sample, statistics } from './check/runner/Sampler';
 
 import { array } from './check/arbitrary/ArrayArbitrary';
+import { bigInt, bigIntN, bigUint, bigUintN } from './check/arbitrary/BigIntArbitrary';
 import { boolean } from './check/arbitrary/BooleanArbitrary';
 import { ascii, base64, char, char16bits, fullUnicode, hexa, unicode } from './check/arbitrary/CharacterArbitrary';
-import { constant, constantFrom } from './check/arbitrary/ConstantArbitrary';
+import { clonedConstant, constant, constantFrom } from './check/arbitrary/ConstantArbitrary';
+import { context, Context } from './check/arbitrary/ContextArbitrary';
+import { dedup } from './check/arbitrary/DedupArbitrary';
 import { Arbitrary } from './check/arbitrary/definition/Arbitrary';
 import { Shrinkable } from './check/arbitrary/definition/Shrinkable';
 import { dictionary } from './check/arbitrary/DictionaryArbitrary';
+import { emailAddress } from './check/arbitrary/EmailArbitrary';
 import { double, float } from './check/arbitrary/FloatingPointArbitrary';
 import { frequency } from './check/arbitrary/FrequencyArbitrary';
 import { compareBooleanFunc, compareFunc, func } from './check/arbitrary/FunctionArbitrary';
-import { integer, nat } from './check/arbitrary/IntegerArbitrary';
+import { domain } from './check/arbitrary/HostArbitrary';
+import { integer, maxSafeInteger, maxSafeNat, nat } from './check/arbitrary/IntegerArbitrary';
+import { ipV4, ipV6 } from './check/arbitrary/IpArbitrary';
+import { letrec } from './check/arbitrary/LetRecArbitrary';
 import { lorem } from './check/arbitrary/LoremArbitrary';
+import { mapToConstant } from './check/arbitrary/MapToConstantArbitrary';
+import { memo, Memo } from './check/arbitrary/MemoArbitrary';
 import {
   anything,
   json,
@@ -31,6 +40,7 @@ import { oneof } from './check/arbitrary/OneOfArbitrary';
 import { option } from './check/arbitrary/OptionArbitrary';
 import { record, RecordConstraints } from './check/arbitrary/RecordArbitrary';
 import { set } from './check/arbitrary/SetArbitrary';
+import { infiniteStream } from './check/arbitrary/StreamArbitrary';
 import {
   asciiString,
   base64String,
@@ -43,6 +53,15 @@ import {
 } from './check/arbitrary/StringArbitrary';
 import { shuffledSubarray, subarray } from './check/arbitrary/SubarrayArbitrary';
 import { genericTuple, tuple } from './check/arbitrary/TupleArbitrary';
+import {
+  webAuthority,
+  WebAuthorityConstraints,
+  webFragments,
+  webQueryParameters,
+  webSegment,
+  webUrl,
+  WebUrlConstraints
+} from './check/arbitrary/WebArbitrary';
 
 import { AsyncCommand } from './check/model/command/AsyncCommand';
 import { Command } from './check/model/command/Command';
@@ -52,7 +71,12 @@ import { asyncModelRun, modelRun } from './check/model/ModelRunner';
 
 import { Random } from './random/generator/Random';
 
+import { VerbosityLevel } from './check/runner/configuration/VerbosityLevel';
+import { ExecutionStatus } from './check/runner/reporter/ExecutionStatus';
+import { ExecutionTree } from './check/runner/reporter/ExecutionTree';
+import { cloneMethod } from './check/symbols';
 import { Stream, stream } from './stream/Stream';
+import { stringify } from './utils/stringify';
 
 // boolean
 // floating point types
@@ -79,6 +103,12 @@ export {
   double,
   integer,
   nat,
+  maxSafeInteger,
+  maxSafeNat,
+  bigIntN,
+  bigUintN,
+  bigInt,
+  bigUint,
   char,
   ascii,
   char16bits,
@@ -97,12 +127,16 @@ export {
   lorem,
   constant,
   constantFrom,
+  clonedConstant,
+  mapToConstant,
   option,
   oneof,
   frequency,
+  dedup,
   shuffledSubarray,
   subarray,
   array,
+  infiniteStream,
   set,
   tuple,
   genericTuple,
@@ -114,9 +148,22 @@ export {
   jsonObject,
   unicodeJson,
   unicodeJsonObject,
+  letrec,
+  memo,
   compareBooleanFunc,
   compareFunc,
   func,
+  context,
+  // web
+  ipV4,
+  ipV6,
+  domain,
+  webAuthority,
+  webSegment,
+  webFragments,
+  webQueryParameters,
+  webUrl,
+  emailAddress,
   // model-based
   AsyncCommand,
   Command,
@@ -127,12 +174,22 @@ export {
   // extend the framework
   Arbitrary,
   Shrinkable,
+  cloneMethod,
+  // print values
+  stringify,
   // interfaces
+  Context,
+  ExecutionStatus,
+  ExecutionTree,
+  Memo,
   ObjectConstraints,
   Parameters,
   RecordConstraints,
+  WebAuthorityConstraints,
+  WebUrlConstraints,
   RunDetails,
   Random,
   Stream,
-  stream
+  stream,
+  VerbosityLevel
 };

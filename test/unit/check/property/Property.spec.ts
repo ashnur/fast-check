@@ -1,5 +1,3 @@
-import * as assert from 'assert';
-
 import { Arbitrary } from '../../../../src/check/arbitrary/definition/Arbitrary';
 import { Shrinkable } from '../../../../src/check/arbitrary/definition/Shrinkable';
 import { property } from '../../../../src/check/property/Property';
@@ -14,32 +12,22 @@ describe('Property', () => {
     const p = property(stubArb.single(8), (arg: number) => {
       return false;
     });
-    assert.notEqual(p.run(p.generate(stubRng.mutable.nocall()).value), null, 'Property should fail');
+    expect(p.run(p.generate(stubRng.mutable.nocall()).value)).not.toBe(null); // property fails
   });
   it('Should fail if predicate throws', () => {
     const p = property(stubArb.single(8), (arg: number) => {
       throw 'predicate throws';
     });
-    assert.equal(
-      p.run(p.generate(stubRng.mutable.nocall()).value),
-      'predicate throws',
-      'Property should fail and attach the exception as string'
-    );
+    const out = p.run(p.generate(stubRng.mutable.nocall()).value);
+    expect(out).toEqual('predicate throws');
   });
-  it('Should fail if predicate fails on asserts', () => {
+  it('Should fail if predicate throws an Error', () => {
     const p = property(stubArb.single(8), (arg: number) => {
-      assert.ok(false);
+      throw new Error('predicate throws');
     });
     const out = p.run(p.generate(stubRng.mutable.nocall()).value);
-    assert.equal(typeof out, 'string');
-    assert.ok(
-      (out as string).startsWith('AssertionError'),
-      `Property should fail and attach the exception as string, got: ${out}`
-    );
-    assert.ok(
-      (out as string).indexOf('\n\nStack trace:') !== -1,
-      'Property should include the stack trace when available'
-    );
+    expect(out).toContain('predicate throws');
+    expect(out).toContain('\n\nStack trace:');
   });
   it('Should forward failure of runs with failing precondition', async () => {
     let doNotResetThisValue: boolean = false;
@@ -49,18 +37,18 @@ describe('Property', () => {
       return false;
     });
     const out = p.run(p.generate(stubRng.mutable.nocall()).value);
-    assert.ok(PreconditionFailure.isFailure(out));
-    assert.ok(!doNotResetThisValue, 'should not execute the code after the failing precondition');
+    expect(PreconditionFailure.isFailure(out)).toBe(true);
+    expect(doNotResetThisValue).toBe(false); // does not run code after the failing precondition
   });
   it('Should succeed if predicate is true', () => {
     const p = property(stubArb.single(8), (arg: number) => {
       return true;
     });
-    assert.equal(p.run(p.generate(stubRng.mutable.nocall()).value), null, 'Property should succeed');
+    expect(p.run(p.generate(stubRng.mutable.nocall()).value)).toBe(null);
   });
   it('Should succeed if predicate does not return anything', () => {
     const p = property(stubArb.single(8), (arg: number) => {});
-    assert.equal(p.run(p.generate(stubRng.mutable.nocall()).value), null, 'Property should succeed');
+    expect(p.run(p.generate(stubRng.mutable.nocall()).value)).toBe(null);
   });
   it('Should call and forward arbitraries one time', () => {
     let one_call_to_predicate = false;
@@ -76,43 +64,35 @@ describe('Property', () => {
       one_call_to_predicate = true;
       return arg1 === arbs[0].id;
     });
-    assert.equal(one_call_to_predicate, false, 'The creation of a property should not trigger call to predicate');
+    expect(one_call_to_predicate).toBe(false); // property creation does not trigger call to predicate
     for (let idx = 0; idx !== arbs.length; ++idx) {
-      assert.equal(
-        arbs[idx].called_once,
-        false,
-        `The creation of a property should not trigger call to generator #${idx + 1}`
-      );
+      expect(arbs[idx].called_once).toBe(false); // property creation does not trigger call to generator #${idx + 1}
     }
-    assert.equal(
-      p.run(p.generate(stubRng.mutable.nocall()).value),
-      null,
-      'Predicate should receive the right arguments'
-    );
-    assert.ok(one_call_to_predicate, 'Predicate should have been called by run');
+    expect(p.run(p.generate(stubRng.mutable.nocall()).value)).toBe(null);
+    expect(one_call_to_predicate).toBe(true);
     for (let idx = 0; idx !== arbs.length; ++idx) {
-      assert.ok(arbs[idx].called_once, `Generator #${idx + 1} should have been called by run`);
+      expect(arbs[idx].called_once).toBe(true); //  Generator #${idx + 1} called by run
     }
   });
   it('Should throw on invalid arbitrary', () =>
-    assert.throws(() => property(stubArb.single(8), stubArb.single(8), <Arbitrary<any>>{}, () => {})));
+    expect(() => property(stubArb.single(8), stubArb.single(8), <Arbitrary<any>>{}, () => {})).toThrowError());
   it('Should use the unbiased arbitrary by default', () => {
     const p = property(
-      new class extends Arbitrary<number> {
+      new (class extends Arbitrary<number> {
         generate(): Shrinkable<number> {
           return new Shrinkable(69);
         }
         withBias(): Arbitrary<number> {
           throw 'Should not call withBias if not forced to';
         }
-      }(),
+      })(),
       () => {}
     );
-    assert.equal(p.generate(stubRng.mutable.nocall()).value, 69);
+    expect(p.generate(stubRng.mutable.nocall()).value).toEqual([69]);
   });
   it('Should use the biased arbitrary when asked to', () => {
     const p = property(
-      new class extends Arbitrary<number> {
+      new (class extends Arbitrary<number> {
         generate(): Shrinkable<number> {
           return new Shrinkable(69);
         }
@@ -120,17 +100,17 @@ describe('Property', () => {
           if (typeof freq !== 'number' || freq < 2) {
             throw new Error(`freq atribute must always be superior or equal to 2, got: ${freq}`);
           }
-          return new class extends Arbitrary<number> {
+          return new (class extends Arbitrary<number> {
             generate(): Shrinkable<number> {
               return new Shrinkable(42);
             }
-          }();
+          })();
         }
-      }(),
+      })(),
       () => {}
     );
-    assert.equal(p.generate(stubRng.mutable.nocall(), 0).value, 42);
-    assert.equal(p.generate(stubRng.mutable.nocall(), 2).value, 42);
+    expect(p.generate(stubRng.mutable.nocall(), 0).value).toEqual([42]);
+    expect(p.generate(stubRng.mutable.nocall(), 2).value).toEqual([42]);
   });
   it('Should always execute beforeEach before the test', () => {
     const prob = { beforeEachCalled: false };
@@ -139,7 +119,7 @@ describe('Property', () => {
       prob.beforeEachCalled = false;
       return beforeEachCalled;
     }).beforeEach(() => (prob.beforeEachCalled = true));
-    assert.equal(p.run(p.generate(stubRng.mutable.nocall()).value), null, 'Property should not fail');
+    expect(p.run(p.generate(stubRng.mutable.nocall()).value)).toBe(null);
   });
   it('Should execute afterEach after the test on success', () => {
     const callOrder: string[] = [];
@@ -147,8 +127,8 @@ describe('Property', () => {
       callOrder.push('test');
       return true;
     }).afterEach(() => callOrder.push('afterEach'));
-    assert.equal(p.run(p.generate(stubRng.mutable.nocall()).value), null, 'Property should not fail');
-    assert.deepEqual(callOrder, ['test', 'afterEach']);
+    expect(p.run(p.generate(stubRng.mutable.nocall()).value)).toBe(null);
+    expect(callOrder).toEqual(['test', 'afterEach']);
   });
   it('Should execute afterEach after the test on failure', () => {
     const callOrder: string[] = [];
@@ -156,8 +136,8 @@ describe('Property', () => {
       callOrder.push('test');
       return false;
     }).afterEach(() => callOrder.push('afterEach'));
-    assert.notEqual(p.run(p.generate(stubRng.mutable.nocall()).value), null, 'Property should fail');
-    assert.deepEqual(callOrder, ['test', 'afterEach']);
+    expect(p.run(p.generate(stubRng.mutable.nocall()).value)).not.toBe(null);
+    expect(callOrder).toEqual(['test', 'afterEach']);
   });
   it('Should execute afterEach after the test on uncaught exception', () => {
     const callOrder: string[] = [];
@@ -165,7 +145,7 @@ describe('Property', () => {
       callOrder.push('test');
       throw new Error('uncaught');
     }).afterEach(() => callOrder.push('afterEach'));
-    assert.notEqual(p.run(p.generate(stubRng.mutable.nocall()).value), null, 'Property should fail');
-    assert.deepEqual(callOrder, ['test', 'afterEach']);
+    expect(p.run(p.generate(stubRng.mutable.nocall()).value)).not.toBe(null);
+    expect(callOrder).toEqual(['test', 'afterEach']);
   });
 });

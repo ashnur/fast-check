@@ -69,3 +69,42 @@ testArbitrary(fc.json());
 testArbitrary(fc.string());
 testArbitrary(fc.fullUnicodeString());
 testArbitrary(fc.lorem());
+testArbitrary(fc.frequency({ weight: 1, arbitrary: fc.nat() }, { weight: 2, arbitrary: fc.double() }));
+testArbitrary(
+  fc.mapToConstant(
+    {
+      num: 26,
+      build: function(v) {
+        return String.fromCharCode(v + 0x61);
+      }
+    },
+    {
+      num: 10,
+      build: function(v) {
+        return String.fromCharCode(v + 0x30);
+      }
+    }
+  )
+);
+testArbitrary(
+  fc.letrec(function(tie) {
+    return {
+      tree: fc.oneof(tie('node'), tie('leaf'), tie('leaf')),
+      node: fc.tuple(tie('tree'), tie('tree')),
+      leaf: fc.nat()
+    };
+  }).tree
+);
+testArbitrary(
+  (function() {
+    const tree = fc.memo(function(n) {
+      return fc.oneof(node(n), leaf(), leaf());
+    });
+    const node = fc.memo(function(n) {
+      if (n <= 1) return fc.record({ left: leaf(), right: leaf() });
+      return fc.record({ left: tree(), right: tree() });
+    });
+    const leaf = fc.nat;
+    return tree();
+  })()
+);
