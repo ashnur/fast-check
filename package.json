@@ -47,6 +47,7 @@
     "node": ">=0.12"
   },
   "dependencies": {
+    "lorem-ipsum": "^2.0.3",
     "pure-rand": "^1.6.2",
     "tslib": "^1.9.3"
   },
