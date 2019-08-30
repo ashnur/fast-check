@@ -11,7 +11,7 @@ describe(`Generate all values (seed: ${seed})`, () => {
     const mrng = new fc.Random(prand.xorshift128plus(seed));
     const alreadySeen: any = {};
     while (missing > 0) {
-      const g = arb.generate(mrng).value.toString();
+      const g = (arb.generate(mrng).value as any).toString();
       if (alreadySeen[g]) continue;
       alreadySeen[g] = true;
       --missing;
@@ -51,5 +51,32 @@ describe(`Generate all values (seed: ${seed})`, () => {
       fc.assert(
         fc.property(fc.set(fc.string(), 1, 40), csts => lookForMissing(fc.constantFrom(...csts), csts.length))
       ));
+  });
+  describe('fc.anything()', () => {
+    const checkCanProduce = (label: string, typeofLabel: string, toStringLabel: string) => {
+      it(`should be able to generate ${label}`, () => {
+        let numTries = 0;
+        const mrng = new fc.Random(prand.xorshift128plus(seed));
+        const arb = fc.anything({ withBoxedValues: true, withMap: true, withSet: true });
+        while (++numTries <= 10000) {
+          const { value } = arb.generate(mrng);
+          if (typeof value === typeofLabel && Object.prototype.toString.call(value) === toStringLabel) {
+            return;
+          }
+        }
+        fail(`Was not able to generate ${label}`);
+      });
+    };
+    checkCanProduce('null', 'object', '[object Null]');
+    checkCanProduce('undefined', 'undefined', '[object Undefined]');
+    checkCanProduce('boolean', 'boolean', '[object Boolean]');
+    checkCanProduce('number', 'number', '[object Number]');
+    checkCanProduce('string', 'string', '[object String]');
+    checkCanProduce('boxed Boolean', 'object', '[object Boolean]');
+    checkCanProduce('boxed Number', 'object', '[object Number]');
+    checkCanProduce('boxed String', 'object', '[object String]');
+    checkCanProduce('Array', 'object', '[object Array]');
+    checkCanProduce('Set', 'object', '[object Set]');
+    checkCanProduce('Map', 'object', '[object Map]');
   });
 });

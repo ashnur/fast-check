@@ -1,7 +1,7 @@
 import * as fc from '../../../../lib/fast-check';
 
 import { Shrinkable } from '../../../../src/check/arbitrary/definition/Shrinkable';
-import { integer, nat } from '../../../../src/check/arbitrary/IntegerArbitrary';
+import { integer, nat, maxSafeNat, maxSafeInteger } from '../../../../src/check/arbitrary/IntegerArbitrary';
 
 import * as genericHelper from './generic/GenericArbitraryHelper';
 
@@ -146,6 +146,14 @@ describe('IntegerArbitrary', () => {
           return -log2(-min) <= g && g <= log2(max);
         })
       ));
+    it('Should throw when minimum number is greater than maximum one', () =>
+      fc.assert(
+        fc.property(fc.integer(), fc.integer(), (a, b) => {
+          fc.pre(a !== b);
+          if (a < b) expect(() => integer(b, a)).toThrowError();
+          else expect(() => integer(a, b)).toThrowError();
+        })
+      ));
     describe('Given no constraints [between -2**31 and 2**31 -1]', () => {
       genericHelper.isValidArbitrary(() => integer(), {
         isStrictlySmallerValue: isStrictlySmallerInteger,
@@ -171,7 +179,22 @@ describe('IntegerArbitrary', () => {
       );
     });
   });
+  describe('maxSafeInteger', () => {
+    describe('Given no constraints [between MIN_SAFE_INTEGER and MAX_SAFE_INTEGER]', () => {
+      genericHelper.isValidArbitrary(() => maxSafeInteger(), {
+        isStrictlySmallerValue: isStrictlySmallerInteger,
+        isValidValue: (g: number) =>
+          typeof g === 'number' && g >= Number.MIN_SAFE_INTEGER && g <= Number.MAX_SAFE_INTEGER
+      });
+    });
+  });
   describe('nat', () => {
+    it('Should throw when the number is less than 0', () =>
+      fc.assert(
+        fc.property(fc.integer(Number.MIN_SAFE_INTEGER, -1), n => {
+          expect(() => nat(n)).toThrowError();
+        })
+      ));
     describe('Given no constraints [between 0 and 2**31 -1]', () => {
       genericHelper.isValidArbitrary(() => nat(), {
         isStrictlySmallerValue: isStrictlySmallerInteger,
@@ -183,6 +206,14 @@ describe('IntegerArbitrary', () => {
         seedGenerator: fc.nat(),
         isStrictlySmallerValue: isStrictlySmallerInteger,
         isValidValue: (g: number, maxValue: number) => typeof g === 'number' && g >= 0 && g <= maxValue
+      });
+    });
+  });
+  describe('maxSafeNat', () => {
+    describe('Given no constraints [between 0 and MAX_SAFE_INTEGER]', () => {
+      genericHelper.isValidArbitrary(() => maxSafeNat(), {
+        isStrictlySmallerValue: isStrictlySmallerInteger,
+        isValidValue: (g: number) => typeof g === 'number' && g >= 0 && g <= Number.MAX_SAFE_INTEGER
       });
     });
   });

@@ -12,14 +12,21 @@ import { boolean } from './check/arbitrary/BooleanArbitrary';
 import { ascii, base64, char, char16bits, fullUnicode, hexa, unicode } from './check/arbitrary/CharacterArbitrary';
 import { clonedConstant, constant, constantFrom } from './check/arbitrary/ConstantArbitrary';
 import { context, Context } from './check/arbitrary/ContextArbitrary';
+import { dedup } from './check/arbitrary/DedupArbitrary';
 import { Arbitrary } from './check/arbitrary/definition/Arbitrary';
 import { Shrinkable } from './check/arbitrary/definition/Shrinkable';
 import { dictionary } from './check/arbitrary/DictionaryArbitrary';
+import { emailAddress } from './check/arbitrary/EmailArbitrary';
 import { double, float } from './check/arbitrary/FloatingPointArbitrary';
 import { frequency } from './check/arbitrary/FrequencyArbitrary';
 import { compareBooleanFunc, compareFunc, func } from './check/arbitrary/FunctionArbitrary';
-import { integer, nat } from './check/arbitrary/IntegerArbitrary';
+import { domain } from './check/arbitrary/HostArbitrary';
+import { integer, maxSafeInteger, maxSafeNat, nat } from './check/arbitrary/IntegerArbitrary';
+import { ipV4, ipV6 } from './check/arbitrary/IpArbitrary';
+import { letrec } from './check/arbitrary/LetRecArbitrary';
 import { lorem } from './check/arbitrary/LoremArbitrary';
+import { mapToConstant } from './check/arbitrary/MapToConstantArbitrary';
+import { memo, Memo } from './check/arbitrary/MemoArbitrary';
 import {
   anything,
   json,
@@ -46,6 +53,15 @@ import {
 } from './check/arbitrary/StringArbitrary';
 import { shuffledSubarray, subarray } from './check/arbitrary/SubarrayArbitrary';
 import { genericTuple, tuple } from './check/arbitrary/TupleArbitrary';
+import {
+  webAuthority,
+  WebAuthorityConstraints,
+  webFragments,
+  webQueryParameters,
+  webSegment,
+  webUrl,
+  WebUrlConstraints
+} from './check/arbitrary/WebArbitrary';
 
 import { AsyncCommand } from './check/model/command/AsyncCommand';
 import { Command } from './check/model/command/Command';
@@ -60,6 +76,7 @@ import { ExecutionStatus } from './check/runner/reporter/ExecutionStatus';
 import { ExecutionTree } from './check/runner/reporter/ExecutionTree';
 import { cloneMethod } from './check/symbols';
 import { Stream, stream } from './stream/Stream';
+import { stringify } from './utils/stringify';
 
 // boolean
 // floating point types
@@ -86,6 +103,8 @@ export {
   double,
   integer,
   nat,
+  maxSafeInteger,
+  maxSafeNat,
   bigIntN,
   bigUintN,
   bigInt,
@@ -109,9 +128,11 @@ export {
   constant,
   constantFrom,
   clonedConstant,
+  mapToConstant,
   option,
   oneof,
   frequency,
+  dedup,
   shuffledSubarray,
   subarray,
   array,
@@ -127,10 +148,22 @@ export {
   jsonObject,
   unicodeJson,
   unicodeJsonObject,
+  letrec,
+  memo,
   compareBooleanFunc,
   compareFunc,
   func,
   context,
+  // web
+  ipV4,
+  ipV6,
+  domain,
+  webAuthority,
+  webSegment,
+  webFragments,
+  webQueryParameters,
+  webUrl,
+  emailAddress,
   // model-based
   AsyncCommand,
   Command,
@@ -142,13 +175,18 @@ export {
   Arbitrary,
   Shrinkable,
   cloneMethod,
+  // print values
+  stringify,
   // interfaces
   Context,
   ExecutionStatus,
   ExecutionTree,
+  Memo,
   ObjectConstraints,
   Parameters,
   RecordConstraints,
+  WebAuthorityConstraints,
+  WebUrlConstraints,
   RunDetails,
   Random,
   Stream,

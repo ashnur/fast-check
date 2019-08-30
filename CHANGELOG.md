@@ -1,3 +1,201 @@
+# 1.16.0
+
+_Easier recursive data-structures_
+
+## Features
+
+- ([PR#377](https://github.com/dubzzz/fast-check/pull/377)) Add `fc.letrec` arbitrary
+- ([PR#378](https://github.com/dubzzz/fast-check/pull/378)) Add `fc.memo` arbitrary
+- ([PR#385](https://github.com/dubzzz/fast-check/pull/385)) Add caching for `withBias` of `fc.letrec` arbitrary
+- ([PR#370](https://github.com/dubzzz/fast-check/pull/370)) Add minimum and maximum validation to integer and nat
+- ([PR#382](https://github.com/dubzzz/fast-check/pull/382)) Take `fc.cloneMethod` into account for commands
+- ([PR#372](https://github.com/dubzzz/fast-check/pull/372)) Stringify Date as valid JavaScript
+- ([PR#371](https://github.com/dubzzz/fast-check/pull/371)) Stringify Symbol as valid JavaScript
+
+## Fixes
+
+- ([PR#375](https://github.com/dubzzz/fast-check/pull/375)) Clean: Bump TypeScript to 3.5
+- ([PR#384](https://github.com/dubzzz/fast-check/pull/384)) Clean: Remove circular dependency in WebArbitrary file
+- ([PR#389](https://github.com/dubzzz/fast-check/pull/389)) Test: Check that `fc.memo` and `fc.letrec` are compatible with node 0.12
+- ([PR#376](https://github.com/dubzzz/fast-check/pull/376)) Test: Fix broken e2e tests
+- ([PR#385](https://github.com/dubzzz/fast-check/pull/385)) Test: Mark warnings as errors in rollup config
+- ([PR#388](https://github.com/dubzzz/fast-check/pull/388)) Type: Fix type inferrence bug in `modelRun`
+- ([PR#379](https://github.com/dubzzz/fast-check/pull/379)) Refactoring: Re-implement `fc.object` with `fc.memo`
+
+---
+
+# 1.15.1
+
+_Documentation updates_
+
+## Fixes
+
+- ([PR#363](https://github.com/dubzzz/fast-check/pull/363)) Clean: Bump dev dependencies
+- ([PR#366](https://github.com/dubzzz/fast-check/pull/366)) Clean: Incremental build
+- ([PR#362](https://github.com/dubzzz/fast-check/pull/362)) Clean: Test against node 12
+- ([PR#361](https://github.com/dubzzz/fast-check/pull/361)) Doc: Clarify replay of commands
+- ([PR#368](https://github.com/dubzzz/fast-check/pull/368)) Doc: Direct link to genrated documentation
+- ([PR#364](https://github.com/dubzzz/fast-check/pull/364)) Doc: Extra badges in README
+- ([PR#358](https://github.com/dubzzz/fast-check/pull/358)) Doc: Fix various typos
+- ([PR#355](https://github.com/dubzzz/fast-check/pull/355)) Test: Add no regression snapshot tests
+
+# 1.15.0
+
+_Add auto-skip after time limit option for runners_
+
+## Features
+
+- ([PR#352](https://github.com/dubzzz/fast-check/pull/352)) Ability to auto skip runs after time limit
+- ([PR#348](https://github.com/dubzzz/fast-check/pull/348)) Expose `fc.stringify` in the API
+
+## Fixes
+
+- ([PR#354](https://github.com/dubzzz/fast-check/pull/354)) Doc: Add examples of issues discovered using fast-check
+- ([PR#353](https://github.com/dubzzz/fast-check/pull/353)) Doc: Better logo
+- ([PR#351](https://github.com/dubzzz/fast-check/pull/351)) Size: Add dependency to tslib - *should reduce size of the bundle*
+- ([PR#349](https://github.com/dubzzz/fast-check/pull/349)) Test: No regression snapshot tests
+
+---
+
+# 1.14.0
+
+_New generated documentation and new arbitraries_
+
+## Features
+
+- ([PR#339](https://github.com/dubzzz/fast-check/pull/339)) Add `fc.ipV4()` and `fc.ipV6()` arbitraries
+- ([PR#340](https://github.com/dubzzz/fast-check/pull/340)) Add `fc.mapToConstant()` arbitrary
+- ([PR#344](https://github.com/dubzzz/fast-check/pull/344)) Add `fc.webUrl()` and other web urls related arbitraries
+- ([PR#345](https://github.com/dubzzz/fast-check/pull/345)) Add `fc.emailAddress()` arbitrary
+
+## Fixes
+
+- ([PR#343](https://github.com/dubzzz/fast-check/pull/343)) Doc: Generate the API documentation with docsify
+
+---
+
+# 1.13.0
+
+_Remove dependency to lorem-ipsum and more control over `fc.anything` and `fc.object`_
+
+## Features
+
+- ([PR#336](https://github.com/dubzzz/fast-check/pull/336)) Remove dependency to lorem-ipsum
+- ([PR#337](https://github.com/dubzzz/fast-check/pull/337)) `fc.frequency()` should be compatible with legacy node
+- ([PR#338](https://github.com/dubzzz/fast-check/pull/338)) Add parameter to customize size of `fc.object()` and `fc.anything()`
+
+---
+
+# 1.12.1
+
+_Lighter bundle_
+
+## Fixes
+
+- ([PR#327](https://github.com/dubzzz/fast-check/pull/327)) Doc: Ability to copy-paste snippets in HandsOnPropertyBased.md
+- ([PR#334](https://github.com/dubzzz/fast-check/pull/334)) Size: Reduce the size of the bundle - *Potential issue if your code directly references TupleArbitrary<T1...>, it should be replaced by Arbitrary<[T1,...]>*
+
+# 1.12.0
+
+_Better balance between values produced by `fc.anything()`_
+
+## Features
+
+- ([PR#325](https://github.com/dubzzz/fast-check/pull/325)) Better balance between values produced by `fc.anything()`
+
+---
+
+# 1.11.0
+
+_Replay ability for commands and new arbitraries_
+
+## Features
+
+- ([PR#321](https://github.com/dubzzz/fast-check/pull/321)) Add new flags for `fc.anything` and `fc.object`: `withBoxedValues`, `withSet`, `withMap`
+- ([PR#320](https://github.com/dubzzz/fast-check/pull/320)) Better string representation of failing values
+- ([PR#317](https://github.com/dubzzz/fast-check/pull/317)) Add `fc.dedup` arbitrary
+- ([PR#294](https://github.com/dubzzz/fast-check/pull/294)) Replay ability for commands
+- ([PR#292](https://github.com/dubzzz/fast-check/pull/292)) Flag to stop the test as soon as it fails
+- ([PR#288](https://github.com/dubzzz/fast-check/pull/288)) Add `fc.maxSafeInteger` and `fc.maxSafeNat` arbitraries
+
+## Fixes
+
+- ([PR#295](https://github.com/dubzzz/fast-check/pull/295)) Bug: Not shrinking commands themselves
+- ([PR#290](https://github.com/dubzzz/fast-check/pull/290)) Bug: ExecutionStatus defined as const enum
+- ([PR#298](https://github.com/dubzzz/fast-check/pull/298)) Clean: Factorize code of Runner
+- ([PR#297](https://github.com/dubzzz/fast-check/pull/297)) Clean: Takkle issues reported by codeclimate
+- ([PR#306](https://github.com/dubzzz/fast-check/pull/306)) Doc: Add issues discovered by fast-check
+- ([PR#287](https://github.com/dubzzz/fast-check/pull/287)) Doc: Add issues discovered by fast-check
+- ([PR#322](https://github.com/dubzzz/fast-check/pull/322)) Doc: Links next to features described in Readme
+- ([PR#309](https://github.com/dubzzz/fast-check/pull/309)) Test: Factorize Jest configurations
+- ([PR#307](https://github.com/dubzzz/fast-check/pull/307)) Test: Ensure web-build is correct
+- ([PR#300](https://github.com/dubzzz/fast-check/pull/300)) Perf: No more holey array in `fc.array`
+
+---
+
+# 1.10.1
+
+_Fix browser bundle_
+
+## Fixes
+
+- ([ISSUE#304](https://github.com/dubzzz/fast-check/issues/304)) Fix browser bundle
+
+# 1.10.0
+
+_Better shrinking of commands_
+
+## Features
+
+- ([PR#280](https://github.com/dubzzz/fast-check/pull/280)) Better shrinking of commands
+
+---
+
+# 1.9.3
+
+_Fix browser bundle_
+
+## Fixes
+
+- ([ISSUE#304](https://github.com/dubzzz/fast-check/issues/304)) Fix browser bundle
+
+# 1.9.2
+
+_Adapt typings for older versions of TypeScript_
+
+## Fixes
+
+- ([PR#282](https://github.com/dubzzz/fast-check/pull/282)) Bug: Cannot find name 'bigint'
+- ([PR#282](https://github.com/dubzzz/fast-check/pull/282)) Declare umd build in package.json
+
+# 1.9.1
+
+_VerbosityLevel enum is accessible through fc.VerbosityLevel_
+
+## Fixes
+
+- ([PR#278](https://github.com/dubzzz/fast-check/pull/278)) Bug: VerbosityLevel values not accessible
+
+# 1.9.0
+
+_BigInt support and new verbosity level_
+
+## Features
+
+- ([PR#274](https://github.com/dubzzz/fast-check/pull/274)) Add support for asynchronous check method in AsyncCommand
+- ([PR#271](https://github.com/dubzzz/fast-check/pull/271)) More verbose option
+- ([PR#268](https://github.com/dubzzz/fast-check/pull/268)) Add `bigInt`, `bigIntN`, `bigUint`, `bigUintN` arbitraries
+- ([PR#263](https://github.com/dubzzz/fast-check/pull/263)) Default seed based on random in addition of timestamp
+
+## Fixes
+
+- ([PR#272](https://github.com/dubzzz/fast-check/pull/272)) Bug: Commands partially cloned during the shrinking process
+- ([PR#264](https://github.com/dubzzz/fast-check/pull/264)) Bug: Non-integer seeds not using the full range of integers
+- ([PR#269](https://github.com/dubzzz/fast-check/pull/269)) Clean: Migrate tests to Jest
+- ([PR#276](https://github.com/dubzzz/fast-check/pull/276)) Clean: Unecessary try catch removed for `modelRun`
+
+---
+
 # 1.8.2
 
 _Fix regression introduced in the shrinking of cloneable_

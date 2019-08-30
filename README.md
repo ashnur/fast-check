@@ -1,5 +1,5 @@
 <h3 align="center">
-  <img align="center" src="https://raw.githubusercontent.com/dubzzz/fast-check/master/logo.png" alt="fast-check logo" />
+  <img align="center" src="https://raw.githubusercontent.com/dubzzz/fast-check/master/logo/logo.png" alt="fast-check logo" />
 </h3>
 
 <p align="center">
@@ -10,7 +10,7 @@ Property based testing framework for JavaScript/TypeScript
   <a href="https://travis-ci.org/dubzzz/fast-check"><img src="https://travis-ci.org/dubzzz/fast-check.svg?branch=master" alt="Build Status" /></a>
   <a href="https://badge.fury.io/js/fast-check"><img src="https://badge.fury.io/js/fast-check.svg" alt="npm version" /></a>
   <a href="https://www.npmjs.com/package/fast-check"><img src="https://img.shields.io/npm/dt/fast-check.svg" alt="total downloads" /></a>
-  <a href="https://dubzzz.github.io/fast-check.github.com/"><img src="https://img.shields.io/badge/www-fast--check-%23282ea9.svg" title="official website" /></a>
+  <a href="https://dubzzz.github.io/fast-check/"><img src="https://img.shields.io/badge/documentation-%23282ea9.svg" title="official documentation" /></a>
 </p>
 <p align="center">
   <a href="https://coveralls.io/github/dubzzz/fast-check"><img src="https://coveralls.io/repos/github/dubzzz/fast-check/badge.svg" alt="Coverage Status" /></a>
@@ -18,10 +18,15 @@ Property based testing framework for JavaScript/TypeScript
   <a href="https://david-dm.org/dubzzz/fast-check?type=dev"><img src="https://david-dm.org/dubzzz/fast-check/dev-status.svg" alt="devDependencies Status" /></a>
   <a href="https://snyk.io/test/github/dubzzz/fast-check?targetFile=package.json"><img src="https://snyk.io/test/github/dubzzz/fast-check/badge.svg?targetFile=package.json" alt="Known Vulnerabilities" data-canonical-src="https://snyk.io/test/github/dubzzz/fast-check?targetFile=package.json" style="max-width:100%;"></a>
 </p>
+<p align="center">
+  <a href="https://github.com/dubzzz/fast-check/labels/good%20first%20issue"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs Welcome" /></a>
+  <a href="https://github.com/dubzzz/fast-check/blob/master/LICENSE"><img src="https://img.shields.io/npm/l/fast-check.svg" alt="License" /></a>
+  <a href="https://twitter.com/intent/tweet?text=Check%20out%20fast-check%20by%20%40ndubien%20https%3A%2F%2Fgithub.com%2Fdubzzz%2Ffast-check%20%F0%9F%91%8D"><img src="https://img.shields.io/twitter/url/https/github.com/dubzzz/fast-check.svg?style=social" alt="Twitter" /></a>
+</p>
 
 ## Getting started
 
-Hands-on tutorial and definition of Property Based Testing: [:checkered_flag: see tutorial](https://github.com/dubzzz/fast-check/blob/master/documentation/HandsOnPropertyBased.md).
+Hands-on tutorial and definition of Property Based Testing: [:checkered_flag: see tutorial](https://github.com/dubzzz/fast-check/blob/master/documentation/1-Guides/HandsOnPropertyBased.md).
 
 Property based testing frameworks check the truthfulness of properties. A property is a statement like: *for all (x, y, ...) such as precondition(x, y, ...) holds property(x, y, ...) is true*.
 
@@ -74,28 +79,28 @@ and
 [against various algorithms](https://github.com/dubzzz/fast-check-examples).
 
 Useful documentations:
-- [:checkered_flag: Introduction to Property Based & Hands On](https://github.com/dubzzz/fast-check/blob/master/documentation/HandsOnPropertyBased.md)
-- [:hatching_chick: Built-in arbitraries](https://github.com/dubzzz/fast-check/blob/master/documentation/Arbitraries.md)
-- [:wrench: Custom arbitraries](https://github.com/dubzzz/fast-check/blob/master/documentation/AdvancedArbitraries.md)
-- [:running_man: Property based runners](https://github.com/dubzzz/fast-check/blob/master/documentation/Runners.md)
-- [:boom: Tips](https://github.com/dubzzz/fast-check/blob/master/documentation/Tips.md)
+- [:checkered_flag: Introduction to Property Based & Hands On](https://github.com/dubzzz/fast-check/blob/master/documentation/1-Guides/HandsOnPropertyBased.md)
+- [:hatching_chick: Built-in arbitraries](https://github.com/dubzzz/fast-check/blob/master/documentation/1-Guides/Arbitraries.md)
+- [:wrench: Custom arbitraries](https://github.com/dubzzz/fast-check/blob/master/documentation/1-Guides/AdvancedArbitraries.md)
+- [:running_man: Property based runners](https://github.com/dubzzz/fast-check/blob/master/documentation/1-Guides/Runners.md)
+- [:boom: Tips](https://github.com/dubzzz/fast-check/blob/master/documentation/1-Guides/Tips.md)
 - [:mag: Generated documentation](https://dubzzz.github.io/fast-check/)
 
 ## Why should I migrate to fast-check?
 
 fast-check has initially been designed in an attempt to cope with limitations I encountered while using other property based testing frameworks designed for JavaScript:
 
-- strong and up-to-date types - *thanks to TypeScript*
-- ability to shrink on `fc.oneof` - *surprisingly some frameworks don't*
-- easy `map` method to derive existing arbitraries while keeping shrink - *some frameworks ask the user to provide both a->b and b->a mappings in order to keep a shrinker*
-- kind of flatMap-operation called `chain` - *able to bind the output of an arbitrary as input of another one while keeping the shrink working*
-- biased by default - *by default it generates both small and large values, making it easier to dig into counterexamples without having to tweak a size parameter manually*
-- precondition checks with `fc.pre(...)` - *filtering invalid entries can be done directly inside the check function if needed*
-- verbose mode - *easier troubleshooting with verbose mode enabled*
-- replay directly on the minimal counterexample - *no need to replay the whole sequence, you get directly the counterexample*
-- custom examples in addition of generated ones - *no need to duplicate the code to play the property on custom examples*
-- model based approach - *use the power of property based testing to test UI, APIs or state machines*
-- logger per predicate run - *simplify your troubleshoot with fc.context and its logging feature*
+- **Types:** strong and up-to-date types - *thanks to TypeScript*
+- **Extendable:** easy `map` method to derive existing arbitraries while keeping shrink \[[more](https://github.com/dubzzz/fast-check/blob/master/documentation/1-Guides/AdvancedArbitraries.md#transform-values)\] - *some frameworks ask the user to provide both a->b and b->a mappings in order to keep a shrinker*
+- **Extendable:** kind of flatMap-operation called `chain` \[[more](https://github.com/dubzzz/fast-check/blob/master/documentation/1-Guides/AdvancedArbitraries.md#transform-arbitraries)\] - *able to bind the output of an arbitrary as input of another one while keeping the shrink working*
+- **Extendable:** precondition checks with `fc.pre(...)` \[[more](https://github.com/dubzzz/fast-check/blob/master/documentation/1-Guides/Tips.md#filter-invalid-combinations-using-pre-conditions)\] - *filtering invalid entries can be done directly inside the check function if needed*
+- **Smart:** ability to shrink on `fc.oneof` \[[more](https://github.com/dubzzz/fast-check/blob/master/documentation/1-Guides/Arbitraries.md#combinors-of-arbitraries-t)\] - *surprisingly some frameworks don't*
+- **Smart:** biased by default \[[more](https://github.com/dubzzz/fast-check/blob/master/documentation/1-Guides/AdvancedArbitraries.md#biased-arbitraries)\] - *by default it generates both small and large values, making it easier to dig into counterexamples without having to tweak a size parameter manually*
+- **Debug:** verbose mode \[[more](https://github.com/dubzzz/fast-check/blob/master/documentation/1-Guides/Tips.md#opt-for-verbose-failures)\] - *easier troubleshooting with verbose mode enabled*
+- **Debug:** replay directly on the minimal counterexample \[[more](https://github.com/dubzzz/fast-check/blob/master/documentation/1-Guides/Tips.md#replay-after-failure)\] - *no need to replay the whole sequence, you get directly the counterexample*
+- **Debug:** custom examples in addition of generated ones \[[more](https://github.com/dubzzz/fast-check/blob/master/documentation/1-Guides/Tips.md#add-custom-examples-next-to-generated-ones)\] - *no need to duplicate the code to play the property on custom examples*
+- **Debug:** logger per predicate run \[[more](https://github.com/dubzzz/fast-check/blob/master/documentation/1-Guides/Tips.md#log-within-a-predicate)\] - *simplify your troubleshoot with fc.context and its logging feature*
+- **Unique:** model based approach \[[more](https://github.com/dubzzz/fast-check/blob/master/documentation/1-Guides/Tips.md#model-based-testing-or-ui-test)\]\[[article](https://medium.com/criteo-labs/detecting-the-unexpected-in-web-ui-fuzzing-1f3822c8a3a5)\] - *use the power of property based testing to test UI, APIs or state machines*
 
 For more details, refer to the documentation in the links above.
 
@@ -109,16 +114,6 @@ fast-check has been able to find some unexpected behaviour among famous npm pack
 
 **Code example:** `yaml.dump({toto: -10}, {styles:{'!!int':'binary'}})` produces `toto: 0b-1010` not `toto: -0b1010`
 
-### [left-pad](https://github.com/stevemao/left-pad)
-
-**Issue detected:** unicode characters outside of the BMP plan are not handled consistently \[[more](https://github.com/stevemao/left-pad/issues/58)\]
-
-**Code example:**
-```js
-leftPad('a\u{1f431}b', 4, 'x') //=> 'a\u{1f431}b'  -- in: 3 code points, out: 3 code points
-leftPad('abc', 4, '\u{1f431}') //=> '\u{1f431}abc' -- in: 3 code points, out: 4 code points
-```
-
 ### [query-string](https://github.com/sindresorhus/query-string)
 
 **Issue detected:** enabling the `bracket` setting when exporting arrays containing null values produces an invalid output for the parser \[[more](https://github.com/sindresorhus/query-string/pull/138)\]
@@ -128,3 +123,5 @@ leftPad('abc', 4, '\u{1f431}') //=> '\u{1f431}abc' -- in: 3 code points, out: 4 
 m.stringify({bar: ['a', null, 'b']}, {arrayFormat: 'bracket'}) //=> "bar[]=a&bar&bar[]=b"
 m.parse('bar[]=a&bar&bar[]=b', {arrayFormat: 'bracket'})       //=> {bar: [null, 'b']}
 ```
+
+**[MORE: Issues detected thanks of fast-check](https://github.com/dubzzz/fast-check/blob/master/documentation/1-Guides/IssuesDiscovered.md)**

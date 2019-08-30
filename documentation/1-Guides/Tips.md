@@ -113,6 +113,8 @@ fc.assert(
 
 The code above can easily be applied to other state machines, APIs or UI. In the case of asynchronous operations you need to implement `AsyncCommand` and use `asyncModelRun`.
 
+**NOTE:** Contrary to other arbitraries, commands built using `fc.commands` requires an extra parameter for replay purposes. In addition of passing `{ seed, path }` to `fc.assert`, `fc.commands` must be called with `{ replayPath: string }`.
+
 ## Opt for verbose failures
 
 By default, the failures reported by `fast-check` feature most relevant data:
@@ -124,7 +126,7 @@ By default, the failures reported by `fast-check` feature most relevant data:
 
 `fast-check` comes with a verbose mode, which can help users while trying to dig into a failure.
 
-For instance, let's suppose the folowwing property failed:
+For instance, let's suppose the following property failed:
 ```js
 fc.assert(
     fc.property(
@@ -231,7 +233,9 @@ fc.statistics(
 Whenever `fc.assert` encounters a failure, it displays an error log featuring both the seed and the path to replay it. For instance, in the output below the seed is 1525890375951 and the path 0:0.
 
 ```
-Error: Property failed after 1 tests (seed: 1525890375951, path: 0:0): [0]
+Error: Property failed after 1 tests
+{ seed: 1525890375951, path: 0:0, endOnFailure: true }
+Counterexample: [0]
 Shrunk 1 time(s)
 Got error: Property failed by returning false
 ```
@@ -248,6 +252,7 @@ fc.assert(
 );
 
 // Replay code: straight to the minimal counterexample
+// Only replay the minimal counterexample
 fc.assert(
   fc.property(
     fc.nat(),
@@ -255,10 +260,63 @@ fc.assert(
   ),
   {
     seed: 1525890375951,
-    path: "0:0"
+    path: "0:0",
+    endOnFailure: true
   }
 );
 ```
+
+**NOTE:** Replaying `fc.commands` requires passing an additional flag called `replayPath` when building this arbitrary (see below).
+
+## Replay after failure for commands
+
+As any other built-in arbitrary, `fc.commands` is replayable but the process is a bit different.
+
+Whenever `fc.assert` encounters a failure with `fc.commands`, it displays an error log featuring both the seed, path and replayPath to replay it. For instance, in the output below the seed is 670108017, the path 96:5 and the replayPath is AAAAABAAE:VF.
+
+```
+Property failed after 97 tests
+{ seed: 670108017, path: "96:5", endOnFailure: true }
+Counterexample: [PlayToken[0],NewGame,PlayToken[1],Refresh /*replayPath="AAAAABAAE:VF"*/]
+Shrunk 1 time(s)
+Got error: Error: expect(received).toEqual(expected)
+```
+
+In order to replay the failure on the counterexample - `[PlayToken[0],NewGame,PlayToken[1],Refresh]`, you have to change your code as follow:
+
+```typescript
+// Original code
+fc.assert(
+  fc.property(
+    fc.commands(/* array of commands */),
+    checkEverythingIsOk
+  )
+);
+
+// Replay code: straight to the minimal counterexample
+// Only replay the minimal counterexample
+fc.assert(
+  fc.property(
+    fc.commands(
+      /* array of commands */,
+      {
+        replayPath: "AAAAABAAE:VF"
+      }
+    ),
+    checkEverythingIsOk
+  ),
+  {
+    seed: 670108017,
+    path: "96:5",
+    endOnFailure: true
+  }
+);
+```
+
+**NOTE:** Why is there something specific to do for `fc.commands`?
+In order to come with a more efficient and faster shrinker, `fc.commands` takes into account the commands that have really been executed.
+Basically if the framework generated the following commands `[A,B,C,A,A,C]` but only executed `[A,-,C,A,-,-]` it will shrink only `[A,C,A]`.
+The value stored into `replayPath` encodes the history of what was really executed in order not re-run anything on replay.
 
 ## Add custom examples next to generated ones
 

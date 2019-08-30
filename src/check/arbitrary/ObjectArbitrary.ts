@@ -3,17 +3,24 @@ import { Arbitrary } from './definition/Arbitrary';
 import { array } from './ArrayArbitrary';
 import { boolean } from './BooleanArbitrary';
 import { constant } from './ConstantArbitrary';
-import { dictionary } from './DictionaryArbitrary';
+import { dictionary, toObject } from './DictionaryArbitrary';
 import { double } from './FloatingPointArbitrary';
 import { integer } from './IntegerArbitrary';
+import { memo, Memo } from './MemoArbitrary';
 import { oneof } from './OneOfArbitrary';
+import { set } from './SetArbitrary';
 import { string, unicodeString } from './StringArbitrary';
+import { tuple } from './TupleArbitrary';
 
 export class ObjectConstraints {
-  constructor(readonly key: Arbitrary<string>, readonly values: Arbitrary<any>[], readonly maxDepth: number) {}
-  next(): ObjectConstraints {
-    return new ObjectConstraints(this.key, this.values, this.maxDepth - 1);
-  }
+  constructor(
+    readonly key: Arbitrary<string>,
+    readonly values: Arbitrary<any>[],
+    readonly maxDepth: number,
+    readonly maxKeys: number,
+    readonly withSet: boolean,
+    readonly withMap: boolean
+  ) {}
 
   /**
    * Default value of ObjectConstraints.Settings.values field
@@ -41,14 +48,46 @@ export class ObjectConstraints {
     ];
   }
 
+  /** @hidden */
+  private static boxArbitraries(arbs: Arbitrary<any>[]): Arbitrary<any>[] {
+    return arbs.map(arb =>
+      arb.map(v => {
+        switch (typeof v) {
+          case 'boolean':
+            // tslint:disable-next-line:no-construct
+            return new Boolean(v);
+          case 'number':
+            // tslint:disable-next-line:no-construct
+            return new Number(v);
+          case 'string':
+            // tslint:disable-next-line:no-construct
+            return new String(v);
+          default:
+            return v;
+        }
+      })
+    );
+  }
+
+  /** @hidden */
+  private static boxArbitrariesIfNeeded(arbs: Arbitrary<any>[], boxEnabled: boolean): Arbitrary<any>[] {
+    return boxEnabled ? ObjectConstraints.boxArbitraries(arbs).concat(arbs) : arbs;
+  }
+
   static from(settings?: ObjectConstraints.Settings): ObjectConstraints {
     function getOr<T>(access: () => T | undefined, value: T): T {
       return settings != null && access() != null ? access()! : value;
     }
     return new ObjectConstraints(
       getOr(() => settings!.key, string()),
-      getOr(() => settings!.values, ObjectConstraints.defaultValues()),
-      getOr(() => settings!.maxDepth, 2)
+      ObjectConstraints.boxArbitrariesIfNeeded(
+        getOr(() => settings!.values, ObjectConstraints.defaultValues()),
+        getOr(() => settings!.withBoxedValues, false)
+      ),
+      getOr(() => settings!.maxDepth, 2),
+      getOr(() => settings!.maxKeys, 5),
+      getOr(() => settings!.withSet, false),
+      getOr(() => settings!.withMap, false)
     );
   }
 }
@@ -58,6 +97,8 @@ export namespace ObjectConstraints {
   export interface Settings {
     /** Maximal depth allowed */
     maxDepth?: number;
+    /** Maximal number of keys */
+    maxKeys?: number;
     /**
      * Arbitrary for keys
      *
@@ -87,21 +128,57 @@ export namespace ObjectConstraints {
      *  - `Number.NEGATIVE_INFINITY`
      */
     values?: Arbitrary<any>[];
+    /** Also generate boxed versions of values */
+    withBoxedValues?: boolean;
+    /** Also generate Set */
+    withSet?: boolean;
+    /** Also generate Map */
+    withMap?: boolean;
   }
 }
 
 /** @hidden */
-const anythingInternal = (subConstraints: ObjectConstraints): Arbitrary<any> => {
-  const potentialArbValue = [...subConstraints.values]; // base
-  if (subConstraints.maxDepth > 0) {
-    potentialArbValue.push(objectInternal(subConstraints.next())); // sub-object
-    potentialArbValue.push(...subConstraints.values.map(arb => array(arb))); // arrays of base
-    potentialArbValue.push(array(anythingInternal(subConstraints.next()))); // mixed content arrays
-  }
-  if (subConstraints.maxDepth > 1) {
-    potentialArbValue.push(array(objectInternal(subConstraints.next().next()))); // array of Object
-  }
-  return oneof(...potentialArbValue);
+const anythingInternal = (constraints: ObjectConstraints): Arbitrary<any> => {
+  const arbKeys = constraints.key;
+  const arbitrariesForBase = constraints.values;
+  const maxDepth = constraints.maxDepth;
+  const maxKeys = constraints.maxKeys;
+
+  const entriesOf = (keyArb: Arbitrary<any>, valueArb: Arbitrary<any>) =>
+    set(tuple(keyArb, valueArb), 0, maxKeys, (t1, t2) => t1[0] === t2[0]);
+
+  const mapOf = (ka: Arbitrary<any>, va: Arbitrary<any>) => entriesOf(ka, va).map(v => new Map(v));
+  const dictOf = (ka: Arbitrary<string>, va: Arbitrary<any>) => entriesOf(ka, va).map(v => toObject(v));
+
+  const baseArb = oneof(...arbitrariesForBase);
+  const arrayBaseArb = oneof(...arbitrariesForBase.map(arb => array(arb, 0, maxKeys)));
+  const objectBaseArb = oneof(...arbitrariesForBase.map(arb => dictOf(arbKeys, arb)));
+  const setBaseArb = () => oneof(...arbitrariesForBase.map(arb => set(arb, 0, maxKeys).map(v => new Set(v))));
+  const mapBaseArb = () => oneof(...arbitrariesForBase.map(arb => mapOf(arbKeys, arb)));
+
+  // base[] | anything[]
+  const arrayArb = memo(n => oneof(arrayBaseArb, array(anythingArb(n), 0, maxKeys)));
+  // Set<base> | Set<anything>
+  const setArb = memo(n => oneof(setBaseArb(), set(anythingArb(n), 0, maxKeys).map(v => new Set(v))));
+  // Map<key, base> | (Map<key, anything> | Map<anything, anything>)
+  const mapArb = memo(n =>
+    oneof(mapBaseArb(), oneof(mapOf(arbKeys, anythingArb(n)), mapOf(anythingArb(n), anythingArb(n))))
+  );
+  // {[key:string]: base} | {[key:string]: anything}
+  const objectArb = memo(n => oneof(objectBaseArb, dictOf(arbKeys, anythingArb(n))));
+
+  const anythingArb: Memo<any> = memo(n => {
+    if (n <= 0) return oneof(baseArb);
+    return oneof(
+      baseArb,
+      arrayArb(),
+      objectArb(),
+      ...(constraints.withMap ? [mapArb()] : []),
+      ...(constraints.withSet ? [setArb()] : [])
+    );
+  });
+
+  return anythingArb(maxDepth);
 };
 
 /** @hidden */

@@ -1,64 +1,13 @@
 import * as fc from '../../../src/fast-check';
-
-type M1 = { count: number };
-type R1 = {};
-
-class IncreaseCommand implements fc.Command<M1, R1> {
-  check = (m: Readonly<M1>) => true;
-  run = (m: M1, r: R1) => {
-    m.count += 1;
-  };
-  toString = () => 'inc';
-}
-class DecreaseCommand implements fc.Command<M1, R1> {
-  check = (m: Readonly<M1>) => true;
-  run = (m: M1, r: R1) => {
-    m.count -= 1;
-  };
-  toString = () => 'dec';
-}
-class EvenCommand implements fc.Command<M1, R1> {
-  check = (m: Readonly<M1>) => m.count % 2 === 0;
-  run = (m: M1, r: R1) => {};
-  toString = () => 'even';
-}
-class OddCommand implements fc.Command<M1, R1> {
-  check = (m: Readonly<M1>) => m.count % 2 !== 0;
-  run = (m: M1, r: R1) => {};
-  toString = () => 'odd';
-}
-class CheckLessThanCommand implements fc.Command<M1, R1> {
-  constructor(readonly lessThanValue: number) {}
-  check = (m: Readonly<M1>) => true;
-  run = (m: M1, r: R1) => {
-    expect(m.count).toBeLessThan(this.lessThanValue);
-  };
-  toString = () => `check[${this.lessThanValue}]`;
-}
-class SuccessAlwaysCommand implements fc.Command<M1, R1> {
-  check = (m: Readonly<M1>) => true;
-  run = (m: M1, r: R1) => {};
-  toString = () => 'success';
-}
-
-type M2 = {
-  current: { stepId: number };
-  validSteps: number[];
-};
-type R2 = {};
-
-class SuccessCommand implements fc.Command<M2, R2> {
-  check = (m: Readonly<M2>) => m.validSteps.includes(m.current.stepId++);
-  run = (m: M2, r: R2) => {};
-  toString = () => 'success';
-}
-class FailureCommand implements fc.Command<M2, R2> {
-  check = (m: Readonly<M2>) => m.validSteps.includes(m.current.stepId++);
-  run = (m: M2, r: R2) => {
-    throw 'failure';
-  };
-  toString = () => 'failure';
-}
+import { FailureCommand, SuccessCommand } from './StepCommands';
+import {
+  IncreaseCommand,
+  DecreaseCommand,
+  EvenCommand,
+  OddCommand,
+  CheckLessThanCommand,
+  SuccessAlwaysCommand
+} from './CounterCommands';
 
 const seed = Date.now();
 describe(`CommandsArbitrary (seed: ${seed})`, () => {
@@ -68,13 +17,13 @@ describe(`CommandsArbitrary (seed: ${seed})`, () => {
         fc.property(
           fc.commands(
             [
-              fc.constant(new IncreaseCommand()),
-              fc.constant(new DecreaseCommand()),
+              fc.nat().map(n => new IncreaseCommand(n)),
+              fc.nat().map(n => new DecreaseCommand(n)),
               fc.constant(new EvenCommand()),
               fc.constant(new OddCommand()),
-              fc.integer(1, 10).map(v => new CheckLessThanCommand(v))
+              fc.nat().map(n => new CheckLessThanCommand(n + 1))
             ],
-            1000
+            { disableReplayLog: true, maxCommands: 1000 }
           ),
           cmds => {
             const setup = () => ({
@@ -90,7 +39,7 @@ describe(`CommandsArbitrary (seed: ${seed})`, () => {
 
       const cmdsRepr = out.counterexample![0].toString();
       expect(cmdsRepr).toMatch(/check\[(\d+)\]$/);
-      expect(cmdsRepr).toEqual('inc,check[1]');
+      expect(cmdsRepr).toEqual('inc[1],check[1]');
     });
     it('Should result in empty commands if failures happen after the run', () => {
       const out = fc.check(
@@ -120,7 +69,9 @@ describe(`CommandsArbitrary (seed: ${seed})`, () => {
       const out = fc.check(
         fc.property(
           fc.array(fc.nat(9), 0, 3),
-          fc.commands([fc.constant(new FailureCommand()), fc.constant(new SuccessCommand())]),
+          fc.commands([fc.constant(new FailureCommand()), fc.constant(new SuccessCommand())], {
+            disableReplayLog: true
+          }),
           fc.array(fc.nat(9), 0, 3),
           (validSteps1, cmds, validSteps2) => {
             const setup = () => ({
@@ -143,7 +94,9 @@ describe(`CommandsArbitrary (seed: ${seed})`, () => {
       const out = fc.check(
         fc.property(
           fc.array(fc.nat(9), 0, 3),
-          fc.commands([fc.constant(new FailureCommand()), fc.constant(new SuccessCommand())]),
+          fc.commands([fc.constant(new FailureCommand()), fc.constant(new SuccessCommand())], {
+            disableReplayLog: true
+          }),
           fc.array(fc.nat(9), 0, 3),
           (validSteps1, cmds, validSteps2) => {
             if (String(cmds) !== '') {

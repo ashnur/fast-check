@@ -1,8 +1,11 @@
 .nyc_output/
 coverage/
+docs/
 documentation/
 example/
 perf/
 prebuild/
 src/
 test/
+buildTypes.js
+tsconfig.tsbuildinfo

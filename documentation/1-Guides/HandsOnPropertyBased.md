@@ -26,16 +26,16 @@ They have the interesting property that the suggested counterexample is the mini
 
 For instance: if whenever the string `a` contains `.` in it, the check above fails, then the counterexample would be `{a: '.', b: '', c: ''}` and not `{a: 'dfsdkf:!jk.fs', b: 'azda;', c: 'yyy§g'}`.
 
-## Setting up sample project
+## Setting up a sample project
 
 Initialize a new node project:
 
 ```bash
-:~$ mkdir sample-fast-check
-:~$ cd sample-fast-check
-:-$ npm init --yes
-:-$ npm install typescript ts-node
-:-$ echo "{}" > tsconfig.json
+mkdir sample-fast-check
+cd sample-fast-check
+npm init --yes
+npm install typescript ts-node
+echo "{}" > tsconfig.json
 ```
 
 Create a `src` folder and put the file `sort.ts` into it:
@@ -69,8 +69,8 @@ export const sort = <T>(tab: T[]): T[] => {
 Install a test framework:
 
 ```bash
-:-$ npm install --save-dev jest ts-jest @types/jest
-:-$ mkdir specs ; touch specs/sort.spec.ts
+npm install --save-dev jest ts-jest @types/jest
+mkdir specs ; touch specs/sort.spec.ts
 ```
 
 Edit `package.json` to configure the test framework:
@@ -95,7 +95,7 @@ Edit `package.json` to configure the test framework:
 Install fast-check:
 
 ```bash
-:-$ npm install --save-dev fast-check
+npm install --save-dev fast-check
 ```
 
 The algorithm under test is an integer sorting algorithm. Basically here are some of the properties we might come with:
@@ -152,3 +152,4 @@ Then you can play with settings of `fc.assert` like:
 - `{ verbose: true }`: show all the counterexamples encountered along the shrinking path
 - `{ seed: <seed> }`: replay the exact same set of tests
 - `{ seed: <seed>, path: <path> }`: start directly at the entry corresponding to the given `seed` and `path`
+- `{ seed: <seed>, path: <path>, endOnFailure: true }`: start directly at the entry corresponding to the given `seed`, `path` and stop at the first failure without shrinking

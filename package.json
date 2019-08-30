@@ -1,28 +1,37 @@
 {
   "name": "fast-check",
-  "version": "1.9.0",
+  "version": "1.16.0",
   "description": "Property based testing framework for JavaScript (like QuickCheck)",
   "main": "lib/fast-check.js",
   "module": "lib/esm/fast-check.js",
-  "types": "lib/fast-check.d.ts",
+  "types": "lib/types/fast-check.d.ts",
+  "typesVersions": {
+    ">=3.2": {
+      "*": [
+        "lib/ts3.2/fast-check.d.ts"
+      ]
+    }
+  },
   "scripts": {
     "perf": "node perf/benchmark.js",
     "profile": "node --prof --no-logfile-per-isolate --trace-deopt --trace-opt-verbose perf/profiler.js > deopt.out && node --prof-process v8.log > v8.out",
     "prebuild": "ts-node prebuild/prebuild.ts",
     "build": "tsc",
+    "build:publish-types": "tsc -p tsconfig.publish.types.json && node ./buildTypes.js",
     "build:publish-cjs": "tsc -p tsconfig.publish.json",
     "build:publish-esm": "tsc -p tsconfig.publish.json --module es2015 --moduleResolution node --outDir lib/esm",
     "webbuild": "browserify lib/fast-check.js --s fastcheck | uglifyjs -cm > lib/bundle.js",
     "watch": "tsc -w",
     "test": "npm run build && jest --config jest.unit.config.js --coverage",
     "e2e": "jest --config jest.e2e.config.js",
-    "test:rollup": "rollup --config test/rollup/rollup.config.js && node test/rollup/dist/main.js",
+    "test:rollup-esm": "rollup --config test/rollup/esm/rollup.config.js && node test/rollup/esm/dist/main.js",
+    "test:rollup-iife": "rollup --config test/rollup/iife/rollup.config.js && node test/rollup/iife/dist/main.js",
     "coverage": "cat ./coverage/lcov.info | coveralls",
-    "docs": "typedoc --options typedoc.json ./src/",
+    "docs": "mkdir -p docs/2-API && docsify-init --editDir documentation && cp -R documentation/* docs/ && api-extractor run --local && generate-ts-docs markdown -i docs/2-API -o docs/2-API && cat README.md | sed 's/https:\\/\\/github.com\\/dubzzz\\/fast-check\\/blob\\/master\\/documentation//g' > docs/README.md && markdownbars -i docs/_sidebar.md -o docs/_sidebar.md",
+    "format": "prettier --write \"**/*.{js,ts}\"",
     "format:check": "prettier --list-different \"**/*.{js,ts}\"",
-    "format:fix": "prettier --write \"**/*.{js,ts}\"",
-    "lint:check": "tslint --project tsconfig.json",
-    "lint:fix": "tslint --project tsconfig.json --fix"
+    "lint": "tslint --project tsconfig.json --fix",
+    "lint:check": "tslint --project tsconfig.json"
   },
   "repository": {
     "type": "git",
@@ -38,28 +47,29 @@
     "node": ">=0.12"
   },
   "dependencies": {
-    "lorem-ipsum": "~1.0.6",
-    "pure-rand": "^1.6.0"
+    "pure-rand": "^1.6.2",
+    "tslib": "^1.9.3"
   },
   "devDependencies": {
-    "@types/jest": "^23.3.10",
-    "@types/lorem-ipsum": "^1.0.2",
-    "@types/node": "^10.12.9",
+    "@microsoft/api-extractor": "^7.1.1",
+    "@types/jest": "^24.0.12",
+    "@types/node": "^12.0.0",
     "benchmark": "^2.1.4",
     "browserify": "^16.2.3",
-    "coveralls": "^3.0.2",
-    "jest": "^23.6.0",
-    "prettier": "1.15.3",
-    "rollup": "^0.68.1",
-    "rollup-plugin-commonjs": "^9.2.0",
-    "rollup-plugin-node-resolve": "^4.0.0",
-    "source-map-support": "^0.5.9",
-    "ts-jest": "^23.10.5",
-    "ts-node": "^7.0.1",
-    "tslint": "^5.11.0",
-    "tslint-config-prettier": "^1.16.0",
-    "typedoc": "^0.13.0",
-    "typescript": "^3.2.2",
+    "coveralls": "^3.0.3",
+    "docsify-tools": "^1.0.18",
+    "jest": "^24.7.1",
+    "markdownbars": "^1.0.9",
+    "prettier": "1.17.0",
+    "rollup": "^1.10.1",
+    "rollup-plugin-commonjs": "^9.3.4",
+    "rollup-plugin-node-resolve": "^4.2.3",
+    "source-map-support": "^0.5.12",
+    "ts-jest": "^24.0.2",
+    "ts-node": "^8.2.0",
+    "tslint": "^5.16.0",
+    "tslint-config-prettier": "^1.18.0",
+    "typescript": "^3.5.1",
     "uglifyjs": "^2.4.11"
   },
   "keywords": [

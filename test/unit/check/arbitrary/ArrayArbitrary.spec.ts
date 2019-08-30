@@ -21,7 +21,7 @@ class DummyArbitrary extends Arbitrary<{ key: number }> {
   }
 }
 
-const isStrictlySmallerArray = (arr1: number[], arr2: number[]) => {
+export const isStrictlySmallerArray = (arr1: number[], arr2: number[]) => {
   if (arr1.length > arr2.length) return false;
   if (arr1.length === arr2.length) {
     return arr1.every((v, idx) => arr1[idx] <= arr2[idx]) && arr1.find((v, idx) => arr1[idx] < arr2[idx]) != null;
@@ -66,7 +66,7 @@ describe('ArrayArbitrary', () => {
     });
     it('Should not clone on generate', () => {
       let numCallsToClone = 0;
-      const withClonedAndCounter = new class extends Arbitrary<any> {
+      const withClonedAndCounter = new (class extends Arbitrary<any> {
         generate() {
           const v = {
             [cloneMethod]: () => {
@@ -76,7 +76,7 @@ describe('ArrayArbitrary', () => {
           };
           return new Shrinkable(v);
         }
-      }();
+      })();
       const mrng = stubRng.mutable.counter(0);
       array(withClonedAndCounter).generate(mrng);
       expect(numCallsToClone).toEqual(0);

@@ -4,7 +4,7 @@ const seed = Date.now();
 describe(`StateFullArbitraries (seed: ${seed})`, () => {
   describe('Never call on generate', () => {
     const cloneableWithCount = (data: { counter: number }) =>
-      new class extends fc.Arbitrary<any> {
+      new (class extends fc.Arbitrary<any> {
         generate() {
           const v = {
             [fc.cloneMethod]: () => {
@@ -14,7 +14,7 @@ describe(`StateFullArbitraries (seed: ${seed})`, () => {
           };
           return new fc.Shrinkable(v);
         }
-      }();
+      })();
     it('normal property', () => {
       const data = { counter: 0 };
       fc.assert(fc.property(cloneableWithCount(data), () => {}));
@@ -23,6 +23,11 @@ describe(`StateFullArbitraries (seed: ${seed})`, () => {
     it('normal property with multiple cloneables', () => {
       const data = { counter: 0 };
       fc.assert(fc.property(cloneableWithCount(data), cloneableWithCount(data), () => {}));
+      expect(data.counter).toEqual(0);
+    });
+    it('fc.dedup', () => {
+      const data = { counter: 0 };
+      fc.assert(fc.property(fc.dedup(cloneableWithCount(data), 3), () => {}));
       expect(data.counter).toEqual(0);
     });
     it('fc.tuple', () => {
@@ -94,6 +99,25 @@ describe(`StateFullArbitraries (seed: ${seed})`, () => {
       expect(status.failed).toBe(true);
       expect(nonClonedDetected).toBe(false);
       expect(status.counterexample![1]!.size()).toEqual(1);
+    });
+    it('fc.dedup', () => {
+      let nonClonedDetected = false;
+      const status = fc.check(
+        fc.property(fc.integer(), fc.dedup(fc.context(), 3), fc.integer(), (a, ctxs, b) => {
+          for (const ctx of ctxs) {
+            nonClonedDetected = nonClonedDetected || ctx.size() !== 0;
+            ctx.log('logging stuff');
+          }
+          return a < b;
+        }),
+        { seed }
+      );
+      expect(status.failed).toBe(true);
+      expect(nonClonedDetected).toBe(false);
+      const ctxs = status.counterexample![1];
+      for (const ctx of ctxs) {
+        expect(ctx.size()).toEqual(1);
+      }
     });
     it('fc.tuple', () => {
       let nonClonedDetected = false;
